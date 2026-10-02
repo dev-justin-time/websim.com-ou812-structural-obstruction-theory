@@ -1,0 +1,94 @@
+:root{
+  --bg:#fbfcfe;
+  --card:#ffffff;
+  --accent:#2b6cb0;
+  --muted:#667085;
+  --glass: rgba(43,108,176,0.06);
+  --radius:12px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color-scheme: light;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding:12px;
+}
+
+main#app{
+  width:100%;
+  max-width:720px;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  gap:10px;
+  align-items:start;
+  /* ensure everything fits in one screen height on mobile */
+  height:calc(100vh - 24px);
+}
+
+.card{
+  background:linear-gradient(180deg,var(--card),var(--glass));
+  padding:12px;
+  border-radius:var(--radius);
+  box-shadow:0 6px 18px rgba(16,24,40,0.06);
+}
+
+header.card{padding:14px 12px}
+h1{font-size:18px;margin:0 0 4px 0;color:var(--accent)}
+.subtitle{margin:0;font-size:12px;color:var(--muted)}
+
+#overview .row{display:flex;gap:10px;align-items:start}
+#overview .col{flex:1}
+.toggle{
+  min-width:44px;
+  height:44px;
+  border-radius:10px;
+  border:0;
+  background:var(--accent);
+  color:white;
+  padding:8px 10px;
+  font-weight:600;
+  align-self:flex-start;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.collapsed{margin-top:10px;max-height:0;overflow:hidden;transition:max-height .28s ease,opacity .2s ease;opacity:0}
+.collapsed.open{max-height:260px;opacity:1}
+
+.diagram{width:100%;height:120px;display:block}
+
+.box{fill:#f1f5f9;stroke:#e2e8f0;stroke-width:1}
+.label{font-size:14px;fill:#0f172a;font-weight:600}
+.obs-dot{fill:#ef4444;stroke:white;stroke-width:2}
+.obs-label{font-size:12px;fill:#0f172a}
+
+.legend{display:flex;gap:10px;align-items:center;margin-top:8px}
+.btn{
+  height:36px;
+  padding:8px 12px;
+  border-radius:9px;
+  border:0;
+  background:var(--accent);
+  color:white;
+  font-weight:600;
+  min-width:120px;
+}
+.hint{font-size:12px;color:var(--muted)}
+
+.small{padding:10px}
+#noteText{min-height:44px;font-size:14px;color:#0f172a}
+.footer{display:flex;align-items:center;justify-content:center;padding:6px;font-size:12px;color:var(--muted)}
+
+@media (min-width:680px){
+  main#app{height:calc(100vh - 48px)}
+  .diagram{height:160px}
+}

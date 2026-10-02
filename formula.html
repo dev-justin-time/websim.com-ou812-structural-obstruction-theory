@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Formula Builder — SOT</title>
+  <style>
+    /* Minimal styles copied/adapted from index for the builder */
+    body{margin:0;font-family:Courier New,monospace;background:#00121b;color:#dff}
+    .container{max-width:960px;margin:18px auto;padding:12px;background:rgba(0,20,40,0.96);border:1px solid #0ff;border-radius:8px}
+    h1{margin:0 0 8px 0;color:#0ff;font-size:18px}
+    .fb-header{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+    .fb-btn{padding:6px 10px;border-radius:6px;border:1px solid rgba(0,255,255,0.12);background:transparent;color:#0ff;cursor:pointer}
+    #fb-logic-tab{display:flex;gap:6px;margin-bottom:8px}
+    .fb-symbol{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;margin:4px;background:rgba(0,255,255,0.06);border:1px solid rgba(0,255,255,0.12);border-radius:6px;cursor:pointer}
+    .fb-drop-zone{min-height:80px;background:rgba(0,255,255,0.02);border:2px dashed rgba(0,255,255,0.08);padding:8px;border-radius:6px}
+    .fb-token{display:inline-flex;padding:6px 8px;margin:4px;border-radius:6px;background:rgba(0,255,255,0.08)}
+    .fb-token .fb-token-del{margin-left:6px;color:#f88;cursor:pointer}
+    #fb-validation{margin-top:8px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);color:#cfe}
+    .fb-saved-list{margin-top:8px}
+    .fb-template-btn{padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,0,0.12);background:rgba(255,255,0,0.03);color:#ff0;cursor:pointer;margin:4px}
+    a.back{display:inline-block;margin-top:10px;color:#0ff;text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <div class="fb-header">
+      <h1>Formula Builder (Standalone)</h1>
+      <div>
+        <button id="close-btn" class="fb-btn">Close</button>
+      </div>
+    </div>
+
+    <div>
+      <div style="margin-bottom:8px;color:#9fe;font-size:13px;">Target: <span id="fb-target">Standalone</span></div>
+
+      <div id="fb-logic-tab">
+        <button class="fb-btn" data-tab="logic">Logic</button>
+        <button class="fb-btn" data-tab="sets">Sets</button>
+        <button class="fb-btn" data-tab="calc">Calc</button>
+        <button class="fb-btn" data-tab="rels">Rels</button>
+        <button class="fb-btn" data-tab="greek">Greek</button>
+        <button class="fb-btn" data-tab="nums">Nums</button>
+      </div>
+
+      <div id="fb-palette" style="margin-bottom:10px"></div>
+
+      <div style="margin-top:10px">
+        <div class="fb-drop-zone" id="fb-drop-zone"><span style="opacity:0.5">Drag symbols here or click symbols to add</span></div>
+        <div id="fb-validation">Awaiting formula input...</div>
+
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="fb-save" class="fb-btn">Save</button>
+          <button id="fb-clear" class="fb-btn">Clear</button>
+          <button id="fb-validate" class="fb-btn">Validate</button>
+        </div>
+
+        <div style="margin-top:10px">
+          <input id="fb-approach" placeholder="Approach name..." style="padding:8px;border-radius:6px;width:100%;box-sizing:border-box;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#dff" />
+        </div>
+
+        <div style="margin-top:10px">
+          <div id="fb-templates"></div>
+        </div>
+
+        <div id="fb-saved-section" style="margin-top:10px;display:none">
+          <h3 style="margin:6px 0;color:#ff0">Saved Formulas</h3>
+          <div class="fb-saved-list" id="fb-saved-list"></div>
+        </div>
+
+        <div style="margin-top:12px">
+          <a href="index.html" class="back">← Back to Visualization</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // copy of the formula-builder logic (trimmed to run standalone)
+    (function(){
+      const MATH_SYMBOLS = {
+        logic: [
+            { sym:'∀', desc:'Universal quantifier — "for all"' },
+            { sym:'∃', desc:'Existential quantifier — "there exists"' },
+            { sym:'∄', desc:'Negated existence' },
+            { sym:'⇒', desc:'Material implication' },
+            { sym:'⇔', desc:'Logical equivalence' },
+            { sym:'¬', desc:'Negation' },
+            { sym:'∧', desc:'Logical AND' },
+            { sym:'∨', desc:'Logical OR' },
+            { sym:'⊕', desc:'Exclusive OR' },
+            { sym:'⊢', desc:'Proves / entails' },
+            { sym:'⊨', desc:'Models' },
+            { sym:'∴', desc:'Therefore' },
+        ],
+        sets: [
+            { sym:'∈', desc:'Element of' },
+            { sym:'∉', desc:'Not element of' },
+            { sym:'⊂', desc:'Proper subset' },
+            { sym:'⊆', desc:'Subset or equal' },
+            { sym:'∪', desc:'Union' },
+            { sym:'∩', desc:'Intersection' },
+            { sym:'∖', desc:'Set difference' },
+            { sym:'∅', desc:'Empty set' },
+            { sym:'ℕ', desc:'Natural numbers' },
+            { sym:'ℤ', desc:'Integers' },
+            { sym:'ℚ', desc:'Rationals' },
+            { sym:'ℝ', desc:'Reals' },
+            { sym:'ℂ', desc:'Complex numbers' },
+            { sym:'℘', desc:'Power set' },
+        ],
+        calc: [
+            { sym:'∑', desc:'Summation' },
+            { sym:'∏', desc:'Product' },
+            { sym:'∫', desc:'Integral' },
+            { sym:'∮', desc:'Contour integral' },
+            { sym:'∂', desc:'Partial derivative' },
+            { sym:'∇', desc:'Gradient / del' },
+            { sym:'Δ', desc:'Laplacian / change' },
+            { sym:'∝', desc:'Proportional to' },
+            { sym:'∞', desc:'Infinity' },
+            { sym:'lim', desc:'Limit' },
+            { sym:'→', desc:'Maps to / approaches' },
+            { sym:'↦', desc:'Function mapping' },
+        ],
+        rels: [
+            { sym:'=', desc:'Equals' },
+            { sym:'≠', desc:'Not equal' },
+            { sym:'<', desc:'Less than' },
+            { sym:'>', desc:'Greater than' },
+            { sym:'≤', desc:'Less or equal' },
+            { sym:'≥', desc:'Greater or equal' },
+            { sym:'≈', desc:'Approximately' },
+            { sym:'≡', desc:'Congruent / equivalent' },
+            { sym:'≢', desc:'Not congruent' },
+            { sym:'≅', desc:'Isomorphic' },
+            { sym:'∼', desc:'Similar / distributed' },
+            { sym:'⊥', desc:'Orthogonal / bottom' },
+            { sym:'∥', desc:'Parallel' },
+            { sym:'∠', desc:'Angle' },
+            { sym:'√', desc:'Square root' },
+        ],
+        greek: [
+            { sym:'α', desc:'alpha' }, { sym:'β', desc:'beta' }, { sym:'γ', desc:'gamma' },
+            { sym:'δ', desc:'delta' }, { sym:'ε', desc:'epsilon' }, { sym:'ζ', desc:'zeta' },
+            { sym:'η', desc:'eta' }, { sym:'θ', desc:'theta' }, { sym:'κ', desc:'kappa' },
+            { sym:'λ', desc:'lambda' }, { sym:'μ', desc:'mu' }, { sym:'ν', desc:'nu' },
+            { sym:'ξ', desc:'xi' }, { sym:'π', desc:'pi' }, { sym:'ρ', desc:'rho' },
+            { sym:'σ', desc:'sigma' }, { sym:'τ', desc:'tau' }, { sym:'φ', desc:'phi' },
+            { sym:'χ', desc:'chi' }, { sym:'ψ', desc:'psi' }, { sym:'ω', desc:'omega' },
+            { sym:'Γ', desc:'Gamma' }, { sym:'Δ', desc:'Delta' }, { sym:'Θ', desc:'Theta' },
+            { sym:'Λ', desc:'Lambda' }, { sym:'Ξ', desc:'Xi' }, { sym:'Π', desc:'Pi' },
+            { sym:'Σ', desc:'Sigma' }, { sym:'Φ', desc:'Phi' }, { sym:'Ψ', desc:'Psi' },
+            { sym:'Ω', desc:'Omega' },
+        ],
+        nums: [
+            { sym:'0', desc:'Zero' }, { sym:'1', desc:'One' }, { sym:'2', desc:'Two' },
+            { sym:'3', desc:'Three' }, { sym:'4', desc:'Four' }, { sym:'5', desc:'Five' },
+            { sym:'6', desc:'Six' }, { sym:'7', desc:'Seven' }, { sym:'8', desc:'Eight' },
+            { sym:'9', desc:'Nine' }, { sym:'+', desc:'Plus' }, { sym:'-', desc:'Minus' },
+            { sym:'×', desc:'Times' }, { sym:'÷', desc:'Divide' }, { sym:'/', desc:'Slash' },
+            { sym:'^', desc:'Power' }, { sym:'(', desc:'Open paren' }, { sym:')', desc:'Close paren' },
+            { sym:'[', desc:'Open bracket' }, { sym:']', desc:'Close bracket' },
+            { sym:'{', desc:'Open brace' }, { sym:'}', desc:'Close brace' },
+            { sym:',', desc:'Comma' }, { sym:'.', desc:'Dot' }, { sym:':', desc:'Colon' },
+            { sym:'n', desc:'Variable n' }, { sym:'k', desc:'Variable k' }, { sym:'x', desc:'Variable x' },
+        ]
+      };
+
+      const fb = {
+        palette: document.getElementById('fb-palette'),
+        dropZone: document.getElementById('fb-drop-zone'),
+        tooltip: null,
+        saveBtn: document.getElementById('fb-save'),
+        clearBtn: document.getElementById('fb-clear'),
+        validateBtn: document.getElementById('fb-validate'),
+        approachInput: document.getElementById('fb-approach'),
+        templatesEl: document.getElementById('fb-templates'),
+        savedList: document.getElementById('fb-saved-list'),
+        savedSection: document.getElementById('fb-saved-section'),
+        validationEl: document.getElementById('fb-validation'),
+        formulaTokens: [],
+        savedFormulas: {}
+      };
+
+      function renderPalette(tab){
+        fb.palette.innerHTML='';
+        const symbols = MATH_SYMBOLS[tab] || [];
+        symbols.forEach(s=>{
+          const el=document.createElement('div');
+          el.className='fb-symbol';
+          el.textContent=s.sym;
+          el.title=s.desc;
+          el.addEventListener('click',()=>{
+            fb.formulaTokens.push({sym:s.sym,desc:s.desc});
+            renderFormula(); validateCurrentFormula();
+          });
+          fb.palette.appendChild(el);
+        });
+      }
+
+      function renderFormula(){
+        fb.dropZone.innerHTML='';
+        if(!fb.formulaTokens.length){
+          fb.dropZone.innerHTML='<span style="opacity:0.5">Drag symbols here or click symbols to add</span>';
+          return;
+        }
+        fb.formulaTokens.forEach((t,i)=>{
+          const sp=document.createElement('span');
+          sp.className='fb-token';
+          sp.innerHTML=t.sym + '<span class="fb-token-del" data-idx="'+i+'">×</span>';
+          sp.querySelector('.fb-token-del').addEventListener('click',()=>{ fb.formulaTokens.splice(i,1); renderFormula(); validateCurrentFormula(); });
+          fb.dropZone.appendChild(sp);
+        });
+      }
+
+      function classifySymbol(sym){
+        if (/^[a-zA-Z]$/.test(sym)) return 'variable';
+        if ('∀∃∄'.includes(sym)) return 'quantifier';
+        if ('¬'.includes(sym)) return 'unary';
+        if ('∧∨⊕⇒⇔∈∉⊂⊆=≠<>' .includes(sym)) return 'binary';
+        if ('()[]{}'.includes(sym)) return sym;
+        return 'other';
+      }
+
+      function validateFormulaSimple(tokens){
+        if(!tokens.length) return {valid:false,score:0,errors:['empty']};
+        let score=0.8, errors=[];
+        // simple balance check
+        const stack=[];
+        tokens.forEach((t,i)=>{
+          if('([{'.includes(t.sym)) stack.push(t.sym);
+          if(')]}'.includes(t.sym)){
+            if(!stack.length) errors.push('unmatched close at '+(i+1));
+            else stack.pop();
+          }
+        });
+        if(stack.length) errors.push('unclosed brackets');
+        if(errors.length) score-=0.4;
+        return {valid: errors.length===0 && score>=0.7, score:Math.round(score*100), errors, warnings:[]};
+      }
+
+      function validateCurrentFormula(){
+        const res=validateFormulaSimple(fb.formulaTokens);
+        if(res.valid){
+          fb.validationEl.textContent = '✓ Valid — Score: ' + res.score + '/100';
+          fb.validationEl.style.color = '#8f8';
+        } else {
+          fb.validationEl.textContent = '✗ Invalid — Score: ' + res.score + '/100' + (res.errors.length?(' — '+res.errors.join('; ')):'');
+          fb.validationEl.style.color = '#f88';
+        }
+      }
+
+      document.querySelectorAll('[data-tab]').forEach(btn=>{
+        btn.addEventListener('click',(e)=>{
+          document.querySelectorAll('[data-tab]').forEach(b=>b.style.opacity=0.7);
+          btn.style.opacity=1;
+          renderPalette(btn.dataset.tab);
+        });
+      });
+      document.querySelector('[data-tab="logic"]').style.opacity=1;
+      renderPalette('logic');
+
+      fb.dropZone.addEventListener('dragover',(e)=>{ e.preventDefault(); });
+      fb.dropZone.addEventListener('drop',(e)=>{ e.preventDefault(); try{ const data=JSON.parse(e.dataTransfer.getData('text/plain')); fb.formulaTokens.push({sym:data.sym,desc:data.desc}); renderFormula(); validateCurrentFormula(); }catch(e){} });
+
+      document.getElementById('fb-clear').addEventListener('click',()=>{
+        fb.formulaTokens=[];
+        renderFormula();
+        validateCurrentFormula();
+      });
+      document.getElementById('fb-validate').addEventListener('click', validateCurrentFormula);
+
+      document.getElementById('fb-save').addEventListener('click',()=>{
+        if(!fb.formulaTokens.length) return alert('No formula to save');
+        const approach = (fb.approachInput.value||'Unnamed').trim();
+        const fstr = fb.formulaTokens.map(t=>t.sym).join(' ');
+        if(!fb.savedFormulas['Standalone']) fb.savedFormulas['Standalone'] = [];
+        fb.savedFormulas['Standalone'].push({formula:fstr,approach,score:validateFormulaSimple(fb.formulaTokens).score});
+        renderSavedList();
+        fb.formulaTokens=[];
+        renderFormula();
+        validateCurrentFormula();
+      });
+
+      function renderSavedList(){
+        const list = fb.savedList; list.innerHTML='';
+        const items = fb.savedFormulas['Standalone']||[];
+        if(!items.length){ document.getElementById('fb-saved-section').style.display='none'; return; }
+        document.getElementById('fb-saved-section').style.display='block';
+        items.forEach((it,idx)=>{
+          const d=document.createElement('div'); d.style.padding='6px'; d.style.margin='6px 0'; d.style.border='1px solid rgba(255,255,255,0.04)';
+          d.innerHTML = '<b>'+it.approach+'</b> ['+it.score+']<div style="opacity:0.8;font-size:13px;margin-top:6px">'+it.formula+'</div>';
+          const del = document.createElement('button'); del.textContent='Delete'; del.className='fb-btn'; del.style.marginLeft='8px';
+          del.addEventListener('click',()=>{ fb.savedFormulas['Standalone'].splice(idx,1); renderSavedList(); });
+          d.appendChild(del);
+          list.appendChild(d);
+        });
+      }
+
+      document.getElementById('close-btn').addEventListener('click',()=>{ window.location.href='index.html'; });
+
+      // keyboard quick-add: type a symbol (single char letters/numbers) to add
+      window.addEventListener('keydown',(e)=>{
+        if(e.key.length===1 && /^[a-zA-Z0-9]$/.test(e.key)){
+          fb.formulaTokens.push({sym:e.key,desc:'variable'});
+          renderFormula(); validateCurrentFormula();
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>

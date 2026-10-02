@@ -1,0 +1,2236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structural Obstruction Theory - 3D Visualization (Enhanced)</title>
+    <style>
+        body { margin:0; overflow:hidden; background:#000; font-family:'Courier New',monospace; }
+        /* Top-row info container (matches formula builder style) - positioned between Paper and Formula Builder */
+        #info-container {
+            position:fixed;
+            top:10px;
+            right:380px; /* anchor to the left of the formula builder (which sits at right:10px with width:360px) */
+            width:360px;
+            z-index:220;
+            font-family:'Courier New',monospace;
+            color:#0ff;
+            user-select:none;
+            transition:transform 0.18s ease, opacity 0.18s ease;
+        }
+        #info {
+            background:rgba(0,20,40,0.92);
+            border:1px solid #0ff;
+            border-radius:8px;
+            overflow:hidden;
+            box-sizing:border-box;
+            font-size:12px;
+            display:flex;
+            flex-direction:column;
+            max-height:72vh;
+            width:100%;
+        }
+        #info .info-header {
+            padding:8px 12px;
+            border-bottom:1px solid rgba(0,255,255,0.12);
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            cursor:move;
+            background:rgba(0,15,30,0.98);
+        }
+        #info .info-header h3 { margin:0; font-size:14px; color:#0ff; }
+        #info .info-body {
+            padding:12px;
+            overflow:auto;
+            pointer-events:auto;
+        }
+        #info .info-body .highlight { color:#0f0; font-weight:bold; }
+        #info .info-toggle {
+            background:transparent;
+            border:1px solid rgba(0,255,255,0.12);
+            color:#0ff;
+            border-radius:6px;
+            padding:4px 8px;
+            cursor:pointer;
+            font-family:'Courier New',monospace;
+        }
+        #controls {
+            position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+            color:#fff; background:rgba(0,20,40,0.9); padding:10px 20px;
+            border-radius:8px; border:1px solid #0ff; z-index:100;
+            font-size:11px; white-space:nowrap;
+        }
+        .formula { color:#ff0; margin:5px 0; }
+        .highlight { color:#0f0; font-weight:bold; }
+        #sphere-tooltip {
+            display:none; position:fixed; z-index:400; pointer-events:none;
+            background:rgba(0,15,30,0.95); border:1px solid #0ff; border-radius:6px;
+            padding:10px 14px; font-family:'Courier New',monospace;
+            max-width:320px; box-shadow:0 4px 20px rgba(0,0,0,0.6);
+        }
+        #sphere-tooltip .st-title { font-size:13px; font-weight:bold; color:#fff; margin-bottom:3px; }
+        #sphere-tooltip .st-obstruction { font-size:10px; color:rgba(0,255,255,0.6); margin-bottom:5px; }
+        #sphere-tooltip .st-desc { font-size:11px; color:rgba(255,255,255,0.8); line-height:1.4; margin-bottom:4px; }
+        #sphere-tooltip .st-premise { font-size:10px; color:rgba(255,255,0,0.7); border-left:2px solid #ff0; padding-left:6px; margin-top:3px; }
+        #sphere-tooltip .st-meta { font-size:9px; color:rgba(0,255,255,0.5); margin-top:4px; }
+
+        #legend-btn, .top-btn {
+            position:absolute; z-index:150;
+            background:rgba(0,20,40,0.9); border:1px solid #0ff; border-radius:6px;
+            color:#0ff; font-family:'Courier New',monospace; font-size:11px;
+            padding:6px 14px; cursor:pointer; transition:all 0.2s;
+        }
+        #legend-btn { bottom:45px; left:10px; }
+        #legend-btn:hover, .top-btn:hover { background:rgba(0,255,255,0.2); }
+        #sound-btn { bottom:45px; left:120px; }
+        #export-btn { bottom:45px; left:220px; }
+        #proof-btn { bottom:45px; left:320px; }
+        #heatmap-btn { bottom:45px; left:440px; }
+        .top-btn.active { background:rgba(0,255,255,0.3); box-shadow:0 0 10px rgba(0,255,255,0.5); }
+
+        /* Paper and top-row info-mini toggle positions */
+        #paper-btn { position:absolute; top:10px; left:10px; z-index:160; padding:6px 12px; border-radius:6px; }
+        /* show a small info toggle in the same top-row slot when info is closed */
+        #info-mini-toggle {
+            position:absolute;
+            top:10px;
+            right:380px; /* sits left of the formula builder (which is 360px wide plus 10px margin) */
+            z-index:210;
+            display:none; /* visible only when info panel is closed */
+            align-items:center;
+            justify-content:center;
+            min-width:44px;
+            height:36px;
+            padding:6px 10px;
+            border-radius:6px;
+            background:rgba(0,20,40,0.92);
+            border:1px solid rgba(0,255,255,0.12);
+            color:#0ff;
+            font-family:'Courier New',monospace;
+            cursor:pointer;
+        }
+        #info-mini-toggle:hover { background:rgba(0,255,255,0.08); }
+
+        #legend-overlay {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.7); z-index:500; justify-content:center; align-items:center;
+        }
+        #legend-overlay.open { display:flex; }
+        #legend-popup {
+            width:85%; max-width:900px; max-height:85vh; overflow-y:auto;
+            background:rgba(0,20,40,0.97); border:1px solid #0ff; border-radius:10px;
+            font-family:'Courier New',monospace; color:#0ff; font-size:12px;
+            padding:0; position:relative;
+        }
+        #legend-popup .lg-header {
+            padding:14px 20px; border-bottom:1px solid rgba(0,255,255,0.3);
+            display:flex; justify-content:space-between; align-items:center;
+            position:sticky; top:0; background:rgba(0,20,40,0.99); z-index:10;
+            border-radius:10px 10px 0 0;
+        }
+        #legend-popup .lg-header h2 { margin:0; font-size:16px; }
+        #legend-popup .lg-close { cursor:pointer; color:#f44; font-size:18px; padding:0 6px; }
+        #legend-popup .lg-tabs {
+            display:flex; gap:2px; padding:0 20px; background:rgba(0,20,40,0.95);
+            border-bottom:1px solid rgba(0,255,255,0.15); position:sticky; top:49px; z-index:9;
+        }
+        #legend-popup .lg-tab {
+            padding:8px 16px; cursor:pointer; font-size:11px; color:rgba(0,255,255,0.5);
+            border-bottom:2px solid transparent; transition:all 0.2s;
+        }
+        #legend-popup .lg-tab.active { color:#0ff; border-bottom-color:#0ff; }
+        #legend-popup .lg-tab:hover { color:rgba(0,255,255,0.8); }
+        #legend-popup .lg-content { padding:16px 20px 20px; }
+        #legend-popup .lg-item {
+            display:flex; gap:14px; padding:12px; margin-bottom:8px;
+            background:rgba(0,255,255,0.04); border:1px solid rgba(0,255,255,0.1); border-radius:8px;
+            transition:background 0.2s;
+        }
+        #legend-popup .lg-item:hover { background:rgba(0,255,255,0.08); }
+        #legend-popup .lg-thumb {
+            width:48px; height:48px; min-width:48px; border-radius:6px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:26px; border:1px solid rgba(0,255,255,0.2);
+        }
+        #legend-popup .lg-info { flex:1; }
+        #legend-popup .lg-title { font-size:13px; font-weight:bold; color:#fff; margin-bottom:4px; }
+        #legend-popup .lg-desc { color:rgba(255,255,255,0.75); font-size:11px; margin-bottom:3px; line-height:1.4; }
+        #legend-popup .lg-meta {
+            display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:4px;
+            font-size:10px; color:rgba(0,255,255,0.6);
+        }
+        #legend-popup .lg-meta span { display:inline-flex; align-items:center; gap:3px; }
+        #legend-popup .lg-premise {
+            background:rgba(255,255,0,0.06); border-left:3px solid #ff0;
+            padding:6px 10px; border-radius:0 4px 4px 0; margin-top:4px;
+            font-size:10px; color:rgba(255,255,0,0.7); line-height:1.4;
+        }
+        #legend-popup .lg-search {
+            padding:6px 12px; border-radius:6px; border:1px solid rgba(0,255,255,0.25);
+            background:rgba(0,0,0,0.3); color:#ddd; font-family:'Courier New',monospace;
+            font-size:11px; outline:none; width:200px; margin-left:auto;
+        }
+        #legend-popup .lg-search:focus { border-color:#0ff; }
+        #legend-popup::-webkit-scrollbar { width:6px; }
+        #legend-popup::-webkit-scrollbar-track { background:rgba(0,20,40,0.5); }
+        #legend-popup::-webkit-scrollbar-thumb { background:rgba(0,255,255,0.3); border-radius:3px; }
+
+        .lg-export-btn {
+            padding:5px 12px; border-radius:5px; cursor:pointer;
+            font-family:'Courier New',monospace; font-size:11px;
+            transition:all 0.2s; border:1px solid;
+        }
+        .json-btn { background:rgba(0,255,0,0.1); color:#0f0; border-color:rgba(0,255,0,0.4); }
+        .json-btn:hover { background:rgba(0,255,0,0.3); border-color:#0f0; }
+        .pdf-btn { background:rgba(255,170,0,0.1); color:#ffaa00; border-color:rgba(255,170,0,0.4); }
+        .pdf-btn:hover { background:rgba(255,170,0,0.3); border-color:#ffaa00; }
+
+        #formula-builder {
+            position:absolute; top:10px; right:10px; width:360px; z-index:200;
+            background:rgba(0,20,40,0.92); border:1px solid #0ff; border-radius:8px;
+            font-family:'Courier New',monospace; color:#0ff; font-size:12px;
+            user-select:none; max-height:90vh; overflow-y:auto;
+        }
+        #formula-builder .fb-header {
+            padding:8px 12px; border-bottom:1px solid rgba(0,255,255,0.3);
+            cursor:move; display:flex; justify-content:space-between; align-items:center;
+        }
+        #formula-builder .fb-header span { font-weight:bold; }
+        #formula-builder .fb-header .fb-close { cursor:pointer; color:#f44; font-size:14px; }
+        #formula-builder .fb-body { padding:0; }
+        #formula-builder .fb-section { padding:8px 12px; border-bottom:1px solid rgba(0,255,255,0.15); }
+        #formula-builder .fb-section:last-child { border-bottom:none; }
+        .fb-label { font-size:10px; color:#0ff; opacity:0.7; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; }
+        .fb-symbol-grid { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+        .fb-symbol {
+            width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+            background:rgba(0,255,255,0.1); border:1px solid rgba(0,255,255,0.3); border-radius:4px;
+            cursor:grab; font-size:16px; color:#fff; transition:all 0.2s;
+        }
+        .fb-symbol:hover { background:rgba(0,255,255,0.25); border-color:#0ff; transform:scale(1.15); }
+        .fb-symbol:active { cursor:grabbing; }
+        .fb-symbol-tooltip {
+            display:none; position:fixed; background:#001a33; border:1px solid #0ff;
+            padding:6px 10px; border-radius:4px; font-size:11px; color:#fff;
+            z-index:300; max-width:220px; pointer-events:none;
+        }
+        .fb-drop-zone {
+            min-height:60px; background:rgba(0,255,255,0.05); border:2px dashed rgba(0,255,255,0.25);
+            border-radius:6px; padding:8px; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px; align-items:center;
+        }
+        .fb-drop-zone.drag-over { border-color:#0ff; background:rgba(0,255,255,0.12); }
+        .fb-drop-zone.valid { border-color:#0f0; background:rgba(0,255,0,0.08); }
+        .fb-drop-zone.invalid { border-color:#f44; background:rgba(255,68,68,0.08); }
+        .fb-token {
+            display:inline-flex; align-items:center; gap:2px;
+            background:rgba(0,255,255,0.15); border:1px solid rgba(0,255,255,0.4); border-radius:4px;
+            padding:4px 8px; font-size:14px; color:#fff; cursor:pointer; transition:all 0.2s;
+        }
+        .fb-token:hover { background:rgba(0,255,255,0.25); border-color:#0ff; }
+        .fb-token .fb-token-del { color:#f44; font-size:10px; margin-left:4px; cursor:pointer; opacity:0.6; }
+        .fb-token .fb-token-del:hover { opacity:1; }
+        .fb-btn {
+            padding:5px 12px; border-radius:4px; border:1px solid #0ff; cursor:pointer;
+            font-family:'Courier New',monospace; font-size:11px; transition:all 0.2s;
+        }
+        .fb-btn-primary { background:rgba(0,255,255,0.2); color:#0ff; }
+        .fb-btn-primary:hover { background:rgba(0,255,255,0.35); }
+        .fb-btn-save { background:rgba(0,255,0,0.2); color:#0f0; border-color:#0f0; }
+        .fb-btn-save:hover { background:rgba(0,255,0,0.35); }
+        .fb-btn-clear { background:rgba(255,68,68,0.2); color:#f44; border-color:#f44; }
+        .fb-btn-clear:hover { background:rgba(255,68,68,0.35); }
+        .fb-btn-row { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+        .fb-saved-list { margin-top:4px; display:flex; flex-direction:column; gap:3px; }
+        .fb-saved-item {
+            display:flex; justify-content:space-between; align-items:center;
+            background:rgba(0,255,0,0.08); border:1px solid rgba(0,255,0,0.2); border-radius:4px;
+            padding:4px 8px; font-size:11px; color:#0f0;
+        }
+        .fb-saved-item .fb-saved-del { cursor:pointer; color:#f44; font-size:10px; }
+        .fb-approach-input {
+            width:100%; box-sizing:border-box; padding:5px 8px; border-radius:4px;
+            background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15);
+            color:#ddd; font-size:11px; font-family:'Courier New',monospace; outline:none; margin-top:4px;
+        }
+        .fb-approach-input:focus { border-color:#0ff; }
+        #fb-validation {
+            padding:6px 8px; margin-top:4px; border-radius:4px;
+            font-size:10px; line-height:1.4;
+            background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+            color:rgba(255,255,255,0.7);
+        }
+        #fb-validation.valid { background:rgba(0,255,0,0.08); border-color:rgba(0,255,0,0.3); color:#0f0; }
+        #fb-validation.invalid { background:rgba(255,68,68,0.08); border-color:rgba(255,68,68,0.3); color:#f88; }
+        #fb-validation .v-score { font-weight:bold; font-size:12px; }
+        #fb-validation .v-errors { margin-top:3px; font-size:9px; opacity:0.85; }
+        #fb-templates {
+            display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;
+        }
+        .fb-template-btn {
+            padding:4px 8px; border-radius:4px; border:1px solid rgba(255,255,0,0.4);
+            background:rgba(255,255,0,0.08); color:#ff0; font-size:10px;
+            cursor:pointer; transition:all 0.2s; font-family:'Courier New',monospace;
+        }
+        .fb-template-btn:hover { background:rgba(255,255,0,0.2); border-color:#ff0; }
+
+        #proof-log {
+            position:absolute; bottom:80px; right:10px; width:320px; max-height:200px;
+            overflow-y:auto; z-index:150;
+            background:rgba(0,20,40,0.9); border:1px solid #0ff; border-radius:8px;
+            padding:8px; font-family:'Courier New',monospace; font-size:10px; color:#0ff;
+            display:none;
+        }
+        #proof-log.open { display:block; }
+        #proof-log .pl-title { font-weight:bold; margin-bottom:4px; color:#fff; font-size:11px; }
+        #proof-log .pl-entry { padding:3px 0; border-bottom:1px solid rgba(0,255,255,0.1); }
+        #proof-log .pl-entry.success { color:#0f0; }
+        #proof-log .pl-entry.failure { color:#f88; }
+        #proof-log .pl-entry.partial { color:#ff0; }
+        #proof-log::-webkit-scrollbar { width:4px; }
+        #proof-log::-webkit-scrollbar-thumb { background:rgba(0,255,255,0.3); border-radius:2px; }
+
+        #export-modal {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.85); z-index:600; justify-content:center; align-items:center;
+        }
+        #export-modal.open { display:flex; }
+        #export-modal-content {
+            background:rgba(0,20,40,0.98); border:1px solid #0ff; border-radius:10px;
+            padding:20px; max-width:80%; max-height:80%; text-align:center;
+        }
+        #export-modal-content img { max-width:100%; max-height:60vh; border:1px solid #0ff; border-radius:6px; }
+        #export-modal-content h3 { color:#0ff; margin:0 0 12px; }
+        #export-modal-content .em-btns { margin-top:12px; display:flex; gap:8px; justify-content:center; }
+    </style>
+</head>
+<body>
+    <div id="info-container">
+      <div id="info" aria-live="polite">
+        <div class="info-header" id="info-header">
+          <h3>Structural Obstruction Theory</h3>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="info-toggle" class="info-toggle" title="Minimize">_</button>
+          </div>
+        </div>
+        <div class="info-body" id="info-body">
+          <div id="currentView">View: Main Corridor</div>
+          <div class="formula" id="formula1">O(φ, Γ) ≥ 3/4</div>
+          <div class="formula" id="formula2">κ(M₁, M₂) = √2</div>
+          <div style="margin-top:10px;">
+            <span class="highlight">Abstract Note:</span>
+            <div style="margin-top:8px; color:#cfe;">
+              In formal academic terms: this visualization instantiates a conceptual framework in which obstruction indices are treated as measurable fields encoding impediments to methodological transfer between problem domains. The construction abstracts complex proof‑theoretic resistance into a spatial metaphor—spheres indexed by obstruction values, volumetric heatmaps, and stochastic proof‑path simulations—allowing comparison of relative difficulty and structural relationships. While the model is deliberately reductive and heuristic, it serves as a useful exploratory instrument for hypothesis generation, pedagogical illustration, and qualitative analysis of interproblem connectivity; quantitative claims about actual solvability are not asserted and should be interpreted with circumspection.
+            </div>
+            <div style="margin-top:8px;">
+              <span class="highlight">Problems:</span><br>
+              • Twin Primes: O ≥ 2/3<br>
+              • Navier-Stokes: O ≥ 4/5<br>
+              • P vs NP: O ≥ 1-1/log*n<br>
+              • Riemann: O ≥ 3/4<br>
+              • abc: O ≥ 3/4
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="controls">Mouse: Rotate | Scroll: Zoom | Click: Select | L: Legend | P: Proof Paths | H: Heat Map</div>
+
+    <!-- Formula Builder moved to a standalone app; open it in a new tab -->
+    <button id="formula-app-btn" class="top-btn" title="Open Formula Builder" style="left:140px; bottom:45px; position:absolute; z-index:160;">∑ Formula App</button>
+
+    <button id="legend-btn">&#128214; Legend</button>
+    <button id="sound-btn" class="top-btn active" title="Toggle Sound">&#128266; Sound</button>
+    <button id="export-btn" class="top-btn" title="Export Scene as PNG">&#128247; Export</button>
+    <button id="paper-btn" class="top-btn" title="Read the paper">📄 Paper</button>
+    <!-- Info mini-toggle shown when the full info panel is closed; sits between Paper and Formula Builder -->
+    <div id="info-mini-toggle" title="Open Info">ℹ️ Info</div>
+    <button id="proof-btn" class="top-btn" title="Toggle Proof Path Simulation">&#9889; Proofs</button>
+    <button id="heatmap-btn" class="top-btn active" title="Toggle Obstruction Heat Map">&#127777; Heat</button>
+    <div id="proof-log"><div class="pl-title">&#9889; Proof Path Log</div><div id="pl-entries"></div></div>
+
+    <div id="sphere-tooltip"></div>
+    <div id="legend-overlay">
+        <div id="legend-popup">
+            <div class="lg-header">
+                <h2>&#128214; SOT Visualization Legend</h2>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <input class="lg-search" id="lg-search" placeholder="Filter items..." />
+                    <button class="lg-export-btn json-btn" id="lg-json-btn" title="Download legend as JSON">📄 JSON</button>
+                    <button class="lg-export-btn pdf-btn" id="lg-pdf-btn" title="Print legend as PDF">🖨️ PDF</button>
+                    <span class="lg-close" id="lg-close">&times;</span>
+                </div>
+            </div>
+            <div class="lg-tabs" id="lg-tabs"></div>
+            <div class="lg-content" id="lg-content"></div>
+        </div>
+    </div>
+    <div id="export-modal">
+        <div id="export-modal-content">
+            <h3>&#128247; Scene Export</h3>
+            <img id="export-image" alt="Scene capture" />
+            <div class="em-btns">
+                <button class="fb-btn fb-btn-save" id="em-download">&#128190; Download PNG</button>
+                <button class="fb-btn fb-btn-clear" id="em-close">&#10005; Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paper modal for in-app reading -->
+    <div id="paper-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:650;justify-content:center;align-items:center;">
+      <div style="width:92%;max-width:900px;height:90vh;background:rgba(0,20,40,0.98);border:1px solid #0ff;border-radius:10px;position:relative;display:flex;flex-direction:column;">
+        <iframe id="paper-iframe" src="" style="flex:1;border:0;border-radius:8px;" title="Paper"></iframe>
+        <div style="padding:8px;display:flex;gap:8px;justify-content:center;">
+          <button id="paper-back" class="fb-btn fb-btn-clear">⟵ Back</button>
+          <button id="paper-open-new" class="fb-btn fb-btn-primary">Open in new tab</button>
+        </div>
+        <button id="paper-close" style="position:absolute;top:8px;right:12px;background:transparent;border:0;color:#f44;font-size:20px;cursor:pointer;">&times;</button>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // SOUND MANAGER — Web Audio API oscillator-based SFX
+    // ═══════════════════════════════════════════════════════════════
+    class SoundManager {
+        constructor() {
+            this.ctx = null;
+            this.enabled = true;
+            this.masterGain = 0.5;
+        }
+        init() {
+            if (!this.ctx) {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch(e) { this.enabled = false; }
+            }
+        }
+        play(freq, duration, type='sine', vol=0.1, delay=0) {
+            if (!this.enabled) return;
+            this.init();
+            if (!this.ctx) return;
+            const t0 = this.ctx.currentTime + delay;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, t0);
+            gain.gain.setValueAtTime(0.0001, t0);
+            gain.gain.exponentialRampToValueAtTime(vol * this.masterGain, t0 + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t0);
+            osc.stop(t0 + duration);
+        }
+        hover() { this.play(880, 0.04, 'sine', 0.02); }
+        click() { this.play(440, 0.08, 'triangle', 0.06); this.play(660, 0.06, 'sine', 0.04, 0.03); }
+        save() {
+            this.play(523, 0.1, 'sine', 0.08);
+            this.play(659, 0.1, 'sine', 0.08, 0.08);
+            this.play(784, 0.15, 'sine', 0.1, 0.16);
+        }
+        error() { this.play(180, 0.15, 'sawtooth', 0.06); this.play(140, 0.15, 'sawtooth', 0.06, 0.1); }
+        valid() { this.play(700, 0.08, 'sine', 0.06); this.play(900, 0.1, 'sine', 0.06, 0.06); }
+        invalid() { this.play(200, 0.12, 'square', 0.05); }
+        proofSuccess() {
+            this.play(523, 0.1, 'sine', 0.08);
+            this.play(659, 0.1, 'sine', 0.08, 0.1);
+            this.play(784, 0.1, 'sine', 0.08, 0.2);
+            this.play(1047, 0.2, 'sine', 0.1, 0.3);
+        }
+        proofFail() { this.play(300, 0.15, 'sawtooth', 0.06); this.play(200, 0.2, 'sawtooth', 0.06, 0.1); }
+        proofPartial() { this.play(400, 0.1, 'triangle', 0.06); this.play(500, 0.1, 'triangle', 0.06, 0.1); }
+        toggle(on) { this.play(on ? 600 : 300, 0.08, 'sine', 0.06); }
+    }
+    const sound = new SoundManager();
+
+    // ═══════════════════════════════════════════════════════════════
+    // FORMULA VALIDATOR — Syntax checking with scoring
+    // ═══════════════════════════════════════════════════════════════
+    const FORMULA_CLASSES = {
+        quantifier: ['∀','∃','∄'],
+        unary: ['¬'],
+        binary: ['∧','∨','⊕','⇒','⇔','∈','∉','⊂','⊆','=','≠','<','>','≤','≥','≈','≡','≢','≅','∼','⊥','∥'],
+        setOp: ['∪','∩','∖'],
+        operator: ['+','-','×','÷','/','*'],
+        openBracket: ['(','[','{'],
+        closeBracket: [')',']','}'],
+        bracket: ['(',')','[',']','{','}'],
+        constant: ['∅','ℕ','ℤ','ℚ','ℝ','ℂ','∞','0','1','2','3','4','5','6','7','8','9'],
+        calcPrefix: ['∑','∏','∫','∮','lim'],
+        function: ['Re','Im','log','ln','sin','cos','tan','exp','det','dim','rank'],
+        greek: ['α','β','γ','δ','ε','ζ','η','θ','ι','κ','λ','μ','ν','ξ','π','ρ','σ','τ','υ','φ','χ','ψ','ω','Γ','Δ','Θ','Λ','Ξ','Π','Σ','Φ','Ψ','Ω','ζ'],
+        variable: /^[a-zA-Z]$/
+    };
+
+    function classifySymbol(sym) {
+        if (FORMULA_CLASSES.quantifier.includes(sym)) return 'quantifier';
+        if (FORMULA_CLASSES.unary.includes(sym)) return 'unary';
+        if (FORMULA_CLASSES.binary.includes(sym)) return 'binary';
+        if (FORMULA_CLASSES.setOp.includes(sym)) return 'setOp';
+        if (FORMULA_CLASSES.operator.includes(sym)) return 'operator';
+        if (FORMULA_CLASSES.openBracket.includes(sym)) return 'openBracket';
+        if (FORMULA_CLASSES.closeBracket.includes(sym)) return 'closeBracket';
+        if (FORMULA_CLASSES.constant.includes(sym)) return 'constant';
+        if (FORMULA_CLASSES.calcPrefix.includes(sym)) return 'calcPrefix';
+        if (FORMULA_CLASSES.function.includes(sym)) return 'function';
+        if (FORMULA_CLASSES.greek.includes(sym)) return 'greek';
+        if (FORMULA_CLASSES.variable.test(sym)) return 'variable';
+        if (sym === '→' || sym === '↦') return 'arrow';
+        if (sym === '∴' || sym === '⊢' || sym === '⊨') return 'meta';
+        if (sym === '∂' || sym === '∇' || sym === 'Δ' || sym === '∝' || sym === '∠' || sym === '√') return 'calcOp';
+        if (sym === '℘') return 'function';
+        if (sym === 'lim') return 'calcPrefix';
+        return 'unknown';
+    }
+
+    function validateFormula(tokens) {
+        if (!tokens || tokens.length === 0) {
+            return { valid: false, score: 0, errors: ['Empty formula'], warnings: [] };
+        }
+        const errors = [];
+        const warnings = [];
+        let score = 1.0;
+        const classes = tokens.map(t => classifySymbol(t.sym));
+
+        // 1. Bracket balance
+        const bracketStack = [];
+        const bracketPairs = {'(':')', '[':']', '{':'}'};
+        const closingToOpening = {')':'(', ']':'[', '}':'{'};
+        tokens.forEach((t, i) => {
+            const c = classes[i];
+            if (c === 'openBracket') bracketStack.push({ sym: t.sym, idx: i });
+            else if (c === 'closeBracket') {
+                if (bracketStack.length === 0) {
+                    errors.push(`Unmatched closing '${t.sym}' at position ${i+1}`);
+                    score -= 0.2;
+                } else {
+                    const top = bracketStack[bracketStack.length - 1];
+                    if (bracketPairs[top.sym] === t.sym) bracketStack.pop();
+                    else {
+                        errors.push(`Mismatched brackets: '${top.sym}' at ${top.idx+1} vs '${t.sym}' at ${i+1}`);
+                        score -= 0.2;
+                        bracketStack.pop();
+                    }
+                }
+            }
+        });
+        bracketStack.forEach(b => {
+            errors.push(`Unclosed '${b.sym}' at position ${b.idx+1}`);
+            score -= 0.15;
+        });
+
+        // 2. Quantifier must be followed by variable
+        for (let i = 0; i < tokens.length; i++) {
+            if (classes[i] === 'quantifier') {
+                const next = tokens[i+1];
+                if (!next) {
+                    errors.push(`Quantifier '${tokens[i].sym}' at end of formula`);
+                    score -= 0.2;
+                } else if (classifySymbol(next.sym) !== 'variable' && next.sym !== '(') {
+                    warnings.push(`Quantifier '${tokens[i].sym}' should be followed by a variable`);
+                    score -= 0.05;
+                }
+            }
+        }
+
+        // 3. Binary operator must have operands on both sides
+        for (let i = 0; i < tokens.length; i++) {
+            const c = classes[i];
+            if (c === 'binary' || c === 'setOp' || c === 'operator') {
+                const prev = i > 0 ? classes[i-1] : null;
+                const next = i < tokens.length - 1 ? classes[i+1] : null;
+                const prevIsOperand = prev && !['binary','setOp','operator','quantifier','unary','openBracket','meta','arrow'].includes(prev);
+                const nextIsOperand = next && !['binary','setOp','operator','closeBracket','meta','arrow'].includes(next);
+                if (!prevIsOperand && !(prev === 'openBracket')) {
+                    errors.push(`Operator '${tokens[i].sym}' at position ${i+1} missing left operand`);
+                    score -= 0.15;
+                }
+                if (!nextIsOperand && !(next === 'closeBracket')) {
+                    errors.push(`Operator '${tokens[i].sym}' at position ${i+1} missing right operand`);
+                    score -= 0.15;
+                }
+            }
+        }
+
+        // 4. No two binary operators in sequence
+        for (let i = 1; i < tokens.length; i++) {
+            const c = classes[i];
+            const p = classes[i-1];
+            if ((c === 'binary' || c === 'setOp' || c === 'operator') &&
+                (p === 'binary' || p === 'setOp' || p === 'operator' || p === 'quantifier')) {
+                errors.push(`Invalid operator sequence at positions ${i} and ${i+1}`);
+                score -= 0.1;
+            }
+        }
+
+        // 5. Unary must be followed by something
+        for (let i = 0; i < tokens.length - 1; i++) {
+            if (classes[i] === 'unary') {
+                const next = classes[i+1];
+                if (next === 'binary' || next === 'setOp' || next === 'closeBracket') {
+                    errors.push(`Unary '${tokens[i].sym}' at position ${i+1} has invalid successor`);
+                    score -= 0.15;
+                }
+            }
+        }
+
+        // 6. Empty brackets check
+        for (let i = 1; i < tokens.length; i++) {
+            if (classes[i] === 'closeBracket' && classes[i-1] === 'openBracket') {
+                warnings.push(`Empty brackets at positions ${i} and ${i+1}`);
+                score -= 0.05;
+            }
+        }
+
+        // 7. Semantic coherence bonus
+        let hasQuantifier = classes.includes('quantifier');
+        let hasVariable = classes.includes('variable') || classes.includes('greek');
+        let hasRelation = classes.includes('binary') || classes.includes('setOp');
+        if (hasQuantifier && !hasVariable) {
+            warnings.push('Quantifier without variable binding');
+            score -= 0.1;
+        }
+        if (tokens.length >= 3 && hasVariable && hasRelation) score += 0.05;
+
+        score = Math.max(0, Math.min(1, score));
+        const valid = errors.length === 0 && score >= 0.7;
+        return { valid, score: Math.round(score * 100), errors, warnings };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PROBLEM-SPECIFIC FORMULA TEMPLATES
+    // ═══════════════════════════════════════════════════════════════
+    const FORMULA_TEMPLATES = {
+        'Twin Primes': {
+            label: 'Hardy-Littlewood',
+            tokens: [
+                {sym:'π',desc:'Twin prime counting function'},
+                {sym:'₂',desc:'Twin subscript'},
+                {sym:'(',desc:'('},
+                {sym:'x',desc:'Bound variable'},
+                {sym:')',desc:')'},
+                {sym:'∼',desc:'Asymptotic to'},
+                {sym:'2',desc:'2'},
+                {sym:'C',desc:'Twin prime constant'},
+                {sym:'₂',desc:'Subscript'},
+                {sym:'×',desc:'Times'},
+                {sym:'x',desc:'x'},
+                {sym:'/',desc:'Divided by'},
+                {sym:'(',desc:'('},
+                {sym:'ln',desc:'Natural log'},
+                {sym:'x',desc:'x'},
+                {sym:')',desc:')'},
+                {sym:'²',desc:'Squared'}
+            ]
+        },
+        'RH': {
+            label: 'Riemann Hypothesis',
+            tokens: [
+                {sym:'∀',desc:'For all'},
+                {sym:'s',desc:'Complex variable'},
+                {sym:'∈',desc:'In'},
+                {sym:'ℂ',desc:'Complex numbers'},
+                {sym:':',desc:'Such that'},
+                {sym:'ζ',desc:'Zeta function'},
+                {sym:'(',desc:'('},
+                {sym:'s',desc:'s'},
+                {sym:')',desc:')'},
+                {sym:'=',desc:'='},
+                {sym:'0',desc:'Zero'},
+                {sym:'∧',desc:'And'},
+                {sym:'s',desc:'s'},
+                {sym:'∉',desc:'Not in'},
+                {sym:'{',desc:'{'},
+                {sym:'0',desc:'0'},
+                {sym:',',desc:','},
+                {sym:'-',desc:'Negative'},
+                {sym:'2',desc:'2'},
+                {sym:',',desc:','},
+                {sym:'-',desc:'-'},
+                {sym:'4',desc:'4'},
+                {sym:',',desc:','},
+                {sym:'...',desc:'...'},
+                {sym:'}',desc:'}'},
+                {sym:'⇒',desc:'Implies'},
+                {sym:'Re',desc:'Real part'},
+                {sym:'(',desc:'('},
+                {sym:'s',desc:'s'},
+                {sym:')',desc:')'},
+                {sym:'=',desc:'='},
+                {sym:'1',desc:'1'},
+                {sym:'/',desc:'/'},
+                {sym:'2',desc:'2'}
+            ]
+        },
+        'abc': {
+            label: 'abc Conjecture',
+            tokens: [
+                {sym:'∀',desc:'For all'},
+                {sym:'ε',desc:'Epsilon'},
+                {sym:'>',desc:'>'},
+                {sym:'0',desc:'0'},
+                {sym:',',desc:','},
+                {sym:'∃',desc:'Exists'},
+                {sym:'K',desc:'Constant'},
+                {sym:'∀',desc:'For all'},
+                {sym:'a',desc:'a'},
+                {sym:',',desc:','},
+                {sym:'b',desc:'b'},
+                {sym:',',desc:','},
+                {sym:'c',desc:'c'},
+                {sym:':',desc:':'},
+                {sym:'a',desc:'a'},
+                {sym:'+',desc:'+'},
+                {sym:'b',desc:'b'},
+                {sym:'=',desc:'='},
+                {sym:'c',desc:'c'},
+                {sym:'⇒',desc:'Implies'},
+                {sym:'c',desc:'c'},
+                {sym:'<',desc:'<'},
+                {sym:'K',desc:'K'},
+                {sym:'·',desc:'Times'},
+                {sym:'rad',desc:'Radical'},
+                {sym:'(',desc:'('},
+                {sym:'a',desc:'a'},
+                {sym:'b',desc:'b'},
+                {sym:'c',desc:'c'},
+                {sym:')',desc:')'},
+                {sym:'^',desc:'Power'},
+                {sym:'(',desc:'('},
+                {sym:'1',desc:'1'},
+                {sym:'+',desc:'+'},
+                {sym:'ε',desc:'ε'},
+                {sym:')',desc:')'}
+            ]
+        },
+        'P vs NP': {
+            label: 'P vs NP',
+            tokens: [
+                {sym:'P',desc:'Polynomial time class'},
+                {sym:'=',desc:'='},
+                {sym:'?',desc:'Question'},
+                {sym:'NP',desc:'Nondeterministic poly time'},
+                {sym:'⇔',desc:'Iff'},
+                {sym:'∀',desc:'For all'},
+                {sym:'L',desc:'Language'},
+                {sym:'∈',desc:'In'},
+                {sym:'NP',desc:'NP'},
+                {sym:':',desc:':'},
+                {sym:'∃',desc:'Exists'},
+                {sym:'M',desc:'Machine'},
+                {sym:':',desc:':'},
+                {sym:'Time',desc:'Time complexity'},
+                {sym:'(',desc:'('},
+                {sym:'M',desc:'M'},
+                {sym:')',desc:')'},
+                {sym:'∈',desc:'In'},
+                {sym:'O',desc:'Big-O'},
+                {sym:'(',desc:'('},
+                {sym:'n',desc:'n'},
+                {sym:'^',desc:'Power'},
+                {sym:'k',desc:'k'},
+                {sym:')',desc:')'}
+            ]
+        },
+        'Navier-Stokes': {
+            label: 'Navier-Stokes PDE',
+            tokens: [
+                {sym:'∂',desc:'Partial'},
+                {sym:'u',desc:'Velocity field'},
+                {sym:'/',desc:'/'},
+                {sym:'∂',desc:'Partial'},
+                {sym:'t',desc:'Time'},
+                {sym:'+',desc:'+'},
+                {sym:'(',desc:'('},
+                {sym:'u',desc:'u'},
+                {sym:'·',desc:'Dot'},
+                {sym:'∇',desc:'Gradient'},
+                {sym:')',desc:')'},
+                {sym:'u',desc:'u'},
+                {sym:'=',desc:'='},
+                {sym:'-',desc:'-'},
+                {sym:'∇',desc:'Gradient'},
+                {sym:'p',desc:'Pressure'},
+                {sym:'+',desc:'+'},
+                {sym:'ν',desc:'Viscosity'},
+                {sym:'Δ',desc:'Laplacian'},
+                {sym:'u',desc:'u'}
+            ]
+        },
+        'Hodge': {
+            label: 'Hodge Conjecture',
+            tokens: [
+                {sym:'∀',desc:'For all'},
+                {sym:'α',desc:'Hodge class'},
+                {sym:'∈',desc:'In'},
+                {sym:'H',desc:'Cohomology'},
+                {sym:'²',desc:'Superscript 2'},
+                {sym:'ᵏ',desc:'Superscript k'},
+                {sym:'(',desc:'('},
+                {sym:'X',desc:'Variety'},
+                {sym:',',desc:','},
+                {sym:'ℚ',desc:'Rationals'},
+                {sym:')',desc:')'},
+                {sym:'∩',desc:'Intersection'},
+                {sym:'H',desc:'H'},
+                {sym:'ᵏ',desc:'k'},
+                {sym:',',desc:','},
+                {sym:'ᵏ',desc:'k'},
+                {sym:'⇒',desc:'Implies'},
+                {sym:'∃',desc:'Exists'},
+                {sym:'Z',desc:'Cycle'},
+                {sym:':',desc:':'},
+                {sym:'[',desc:'['},
+                {sym:'Z',desc:'Z'},
+                {sym:']',desc:']'},
+                {sym:'=',desc:'='},
+                {sym:'α',desc:'α'}
+            ]
+        },
+        'GI': {
+            label: 'Graph Isomorphism',
+            tokens: [
+                {sym:'G',desc:'Graph G'},
+                {sym:'₁',desc:'Subscript 1'},
+                {sym:'≅',desc:'Isomorphic'},
+                {sym:'G',desc:'Graph G'},
+                {sym:'₂',desc:'Subscript 2'},
+                {sym:'⇔',desc:'Iff'},
+                {sym:'∃',desc:'Exists'},
+                {sym:'φ',desc:'Bijection'},
+                {sym:':',desc:':'},
+                {sym:'V',desc:'Vertices'},
+                {sym:'(',desc:'('},
+                {sym:'G',desc:'G'},
+                {sym:'₁',desc:'1'},
+                {sym:')',desc:')'},
+                {sym:'→',desc:'Maps to'},
+                {sym:'V',desc:'V'},
+                {sym:'(',desc:'('},
+                {sym:'G',desc:'G'},
+                {sym:'₂',desc:'2'},
+                {sym:')',desc:')'}
+            ]
+        },
+        'Collatz': {
+            label: 'Collatz Iteration',
+            tokens: [
+                {sym:'∀',desc:'For all'},
+                {sym:'n',desc:'n'},
+                {sym:'∈',desc:'In'},
+                {sym:'ℕ',desc:'Naturals'},
+                {sym:':',desc:':'},
+                {sym:'∃',desc:'Exists'},
+                {sym:'k',desc:'k'},
+                {sym:':',desc:':'},
+                {sym:'f',desc:'Collatz function'},
+                {sym:'^',desc:'Power'},
+                {sym:'k',desc:'k'},
+                {sym:'(',desc:'('},
+                {sym:'n',desc:'n'},
+                {sym:')',desc:')'},
+                {sym:'=',desc:'='},
+                {sym:'1',desc:'1'},
+                {sym:'.',desc:'.'},
+                {sym:'.',desc:'.'},
+                {sym:'.',desc:'.'}
+            ]
+        }
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // THREE.JS SCENE
+    // ═══════════════════════════════════════════════════════════════
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.02);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.z = 30; camera.position.y = 10;
+    const renderer = new THREE.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.05;
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0x4488ff, 0.8, 100);
+    pointLight.position.set(10,10,10); scene.add(pointLight);
+    const pointLight2 = new THREE.PointLight(0xff44aa, 0.8, 100);
+    pointLight2.position.set(-10,-10,10); scene.add(pointLight2);
+
+    // Starfield
+    const starCount = 2500;
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(starCount * 3);
+    for (let i=0; i<starCount*3; i+=3) {
+        starPos[i] = (Math.random()-0.5)*500;
+        starPos[i+1] = (Math.random()-0.5)*200;
+        starPos[i+2] = (Math.random()-0.5)*500-100;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color:0xffffff, size:0.25, transparent:true, opacity:0.6 }));
+    scene.add(stars);
+
+    const corridors = {
+        logic: { color:0x00ffff, position:[-15,0,0] },
+        numberTheory: { color:0xffaa00, position:[-5,0,0] },
+        geometry: { color:0x00ff00, position:[5,0,0] },
+        computation: { color:0xff00ff, position:[15,0,0] }
+    };
+    const fbRx = { complexity:0, savedCount:0, burstParticles:[], envGlow:0, idleTime:0 };
+    const burstGeo = new THREE.SphereGeometry(0.06,4,4);
+    function spawnBurst(pos, count) {
+        if (!pos) return;
+        const n = Math.min(Math.abs(count)*2, 20);
+        for (let i=0; i<n; i++) {
+            const m = new THREE.MeshBasicMaterial({ color:0x44ffcc, transparent:true, opacity:1 });
+            const p = new THREE.Mesh(burstGeo, m);
+            p.position.copy(pos);
+            p.userData = { vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.5)*0.3, vz:(Math.random()-0.5)*0.3, life:1, decay:0.005+Math.random()*0.01 };
+            scene.add(p); fbRx.burstParticles.push(p);
+        }
+    }
+    function adjustRx(dt) { fbRx.idleTime = 0;
+        fbRx.complexity = fb.formulaTokens.length;
+        fbRx.savedCount = 0; Object.values(fb.savedFormulas).forEach(a => fbRx.savedCount += a.length);
+        fbRx.envGlow = Math.max(Math.min(fbRx.complexity*0.1, 1), Math.min(fbRx.savedCount*0.15, 1.5));
+        if (selectedSphere && dt!==0) spawnBurst(selectedSphere.position, dt);
+    }
+
+    const tunnels = [];
+    const problemSpheres = [];
+    const heatMaps = [];
+    let selectedSphere = null;
+    let glowRing = null;
+    const formulaTexts = [];
+    let heatMapsVisible = true;
+    let proofPathsActive = false;
+
+    const labelNames = { logic:'Logic', numberTheory:'Number Theory', geometry:'Geometry', computation:'Computation' };
+
+    // Create heat map texture
+    function createHeatMapTexture(color, intensity) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256; canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        const r = Math.floor((color >> 16) & 255);
+        const g = Math.floor((color >> 8) & 255);
+        const b = Math.floor(color & 255);
+        const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+        gradient.addColorStop(0, `rgba(${r},${g},${b},${intensity})`);
+        gradient.addColorStop(0.3, `rgba(${r},${g},${b},${intensity*0.6})`);
+        gradient.addColorStop(0.6, `rgba(${r},${g},${b},${intensity*0.2})`);
+        gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 256, 256);
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    Object.keys(corridors).forEach((key) => {
+        const c = corridors[key];
+        const tunnel = new THREE.Mesh(
+            new THREE.CylinderGeometry(3,3,20,8,1,true),
+            new THREE.MeshBasicMaterial({ color:c.color, wireframe:true, transparent:true, opacity:0.3, side:THREE.DoubleSide })
+        );
+        tunnel.position.set(c.position[0],0,c.position[2]);
+        tunnel.rotation.z = Math.PI/2;
+        scene.add(tunnel);
+        tunnels.push(tunnel);
+
+        const labelCanvas = document.createElement('canvas');
+        labelCanvas.width = 512; labelCanvas.height = 128;
+        const lctx = labelCanvas.getContext('2d');
+        lctx.fillStyle = '#000'; lctx.fillRect(0,0,512,128);
+        lctx.fillStyle = '#' + c.color.toString(16).padStart(6,'0');
+        lctx.font = 'bold 48px Courier New'; lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
+        lctx.fillText(labelNames[key] || key, 256, 64);
+        const labelTex = new THREE.CanvasTexture(labelCanvas);
+        const labelSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:labelTex, transparent:true }));
+        labelSprite.position.set(c.position[0], 12, c.position[2]);
+        labelSprite.scale.set(8, 2, 1);
+        scene.add(labelSprite);
+
+        const problems = [
+            { name:'Twin Primes', O:0.67, pos:[0,2,0] },
+            { name:'RH', O:0.75, pos:[0,-2,2] },
+            { name:'abc', O:0.75, pos:[0,0,-2] },
+            { name:'P vs NP', O:0.94, pos:[2,2,0] },
+            { name:'Navier-Stokes', O:0.80, pos:[-2,-2,0] },
+            { name:'Hodge', O:0.75, pos:[0,3,-1] },
+            { name:'GI', O:0.50, pos:[-1,1,2] },
+            { name:'Collatz', O:0.52, pos:[1,-1,-2] }
+        ];
+
+        problems.forEach((prob) => {
+            const radius = 0.3 + prob.O * 0.5;
+            const hue = 0.33*(1-prob.O);
+            const sphereColor = new THREE.Color().setHSL(hue,1,0.5);
+            const sphere = new THREE.Mesh(
+                new THREE.SphereGeometry(radius,16,16),
+                new THREE.MeshPhongMaterial({ color:sphereColor, emissive:sphereColor, emissiveIntensity:0.5, transparent:true, opacity:0.8 })
+            );
+            const angle = Math.random() * Math.PI * 2;
+            sphere.position.set(
+                c.position[0] + Math.cos(angle)*2, prob.pos[1], c.position[2] + Math.sin(angle)*2
+            );
+            sphere.userData = { name:prob.name, obstruction:prob.O, corridor:key };
+            scene.add(sphere);
+            problemSpheres.push(sphere);
+
+            // HEAT MAP — obstruction-colored volumetric glow
+            const heatColor = sphereColor.getHex();
+            const heatTex = createHeatMapTexture(heatColor, 0.5 + prob.O * 0.4);
+            const heatMat = new THREE.SpriteMaterial({
+                map: heatTex,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const heatSprite = new THREE.Sprite(heatMat);
+            heatSprite.position.copy(sphere.position);
+            const heatSize = 4 + prob.O * 6;
+            heatSprite.scale.set(heatSize, heatSize, 1);
+            heatSprite.userData = { parentSphere: sphere, baseSize: heatSize, obstruction: prob.O };
+            scene.add(heatSprite);
+            heatMaps.push(heatSprite);
+
+            const slabCanvas = document.createElement('canvas');
+            slabCanvas.width = 384; slabCanvas.height = 64;
+            const slctx = slabCanvas.getContext('2d');
+            slctx.fillStyle = '#000'; slctx.fillRect(0,0,384,64);
+            slctx.fillStyle = '#fff';
+            slctx.font = 'bold 20px Courier New'; slctx.textAlign = 'center'; slctx.textBaseline = 'middle';
+            slctx.fillText(prob.name, 192, 32);
+            const slabTex = new THREE.CanvasTexture(slabCanvas);
+            const slabSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:slabTex, transparent:true, depthWrite:false }));
+            slabSprite.position.set(sphere.position.x, sphere.position.y + radius + 1.2, sphere.position.z);
+            slabSprite.scale.set(3, 0.75, 1);
+            scene.add(slabSprite);
+
+            for (let j=0; j<5; j++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05,4,4),
+                    new THREE.MeshBasicMaterial({ color:0xffffff })
+                );
+                const pa = (j/5)*Math.PI*2;
+                p.position.set(Math.cos(pa)*(radius+0.5), Math.sin(pa)*(radius+0.5), 0);
+                sphere.add(p);
+                if (!sphere.userData.particles) sphere.userData.particles = [];
+                sphere.userData.particles.push({ mesh:p, angle:pa, speed:0.02+Math.random()*0.02 });
+            }
+        });
+    });
+
+    const formulas = [
+        { text:'O(φ, Γ) ≥ 3/4', pos:[0,8,0] },
+        { text:'κ(M₁, M₂) = √2', pos:[-8,6,0] },
+        { text:'ρ(n) = O(1/n log n)', pos:[8,6,0] },
+        { text:'P ≠ NP?', pos:[15,4,0] },
+        { text:'RH: ζ(s)=0 → Re(s)=1/2', pos:[-5,4,5] }
+    ];
+    formulas.forEach(f => {
+        const canvas = document.createElement('canvas');
+        canvas.width=512; canvas.height=128;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle='#000'; ctx.fillRect(0,0,512,128);
+        ctx.fillStyle='#0f0'; ctx.font='bold 40px Courier New'; ctx.textAlign='center';
+        ctx.fillText(f.text, 256, 70);
+        const tex = new THREE.CanvasTexture(canvas);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true }));
+        sprite.position.set(f.pos[0],f.pos[1],f.pos[2]);
+        sprite.scale.set(8,2,1);
+        scene.add(sprite);
+        formulaTexts.push(sprite);
+    });
+
+    // Connections
+    const connections = [];
+    const connectionPulses = [];
+    for (let i=0; i<problemSpheres.length; i++) {
+        for (let j=i+1; j<problemSpheres.length; j++) {
+            const s1=problemSpheres[i], s2=problemSpheres[j];
+            if (s1.userData.corridor===s2.userData.corridor || Math.abs(s1.userData.obstruction-s2.userData.obstruction)<0.1) {
+                const line = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints([s1.position, s2.position]),
+                    new THREE.LineBasicMaterial({ color:0x44ffcc, transparent:true, opacity:0.3 })
+                );
+                scene.add(line);
+                connections.push({ line, s1, s2 });
+                const pulse = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.15,8,8),
+                    new THREE.MeshBasicMaterial({ color:0x44ffcc, transparent:true, opacity:0.9 })
+                );
+                pulse.position.copy(s1.position);
+                scene.add(pulse);
+                connectionPulses.push({ mesh:pulse, start:s1.position.clone(), end:s2.position.clone(), speed:0.3+Math.random()*0.2, offset:Math.random()*Math.PI*2 });
+            }
+        }
+    }
+
+    const barrierMat = new THREE.MeshBasicMaterial({ color:0xff0000, wireframe:true, transparent:true, opacity:0.5 });
+    [[-10,0,0],[0,0,5],[10,0,0]].forEach(p => {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(0.5,8,8), barrierMat);
+        b.position.set(p[0],p[1],p[2]);
+        scene.add(b);
+    });
+
+    const particleCount = 1000;
+    const positions = new Float32Array(particleCount*3);
+    const velocities = [];
+    for (let i=0; i<particleCount; i++) {
+        positions[i*3]=(Math.random()-0.5)*50;
+        positions[i*3+1]=(Math.random()-0.5)*20;
+        positions[i*3+2]=(Math.random()-0.5)*50;
+        velocities.push({ x:(Math.random()-0.5)*0.1, y:(Math.random()-0.5)*0.1, z:(Math.random()-0.5)*0.1 });
+    }
+    const particleGeo = new THREE.BufferGeometry();
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particleMesh = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color:0xffff00, size:0.1 }));
+    scene.add(particleMesh);
+
+    // ═══════════════════════════════════════════════════════════════
+    // PROOF PATH VISUALIZATION
+    // ═══════════════════════════════════════════════════════════════
+    const proofAttempts = [];
+    const proofLogEntries = [];
+    const proofLogEl = document.getElementById('pl-entries');
+
+    function spawnProofAttempt() {
+        if (connections.length === 0) return;
+        const conn = connections[Math.floor(Math.random() * connections.length)];
+        const reverse = Math.random() < 0.5;
+        const start = reverse ? conn.s2 : conn.s1;
+        const end = reverse ? conn.s1 : conn.s2;
+
+        // Determine outcome based on combined obstruction
+        const combinedO = (start.userData.obstruction + end.userData.obstruction) / 2;
+        const rand = Math.random();
+        let outcome, color, outcomeText;
+        if (rand < 0.15 * (1 - combinedO)) {
+            outcome = 'success';
+            color = 0x00ff00;
+            outcomeText = '✓ Proof path succeeded';
+        } else if (rand < 0.4) {
+            outcome = 'partial';
+            color = 0xffff00;
+            outcomeText = '◐ Partial result';
+        } else {
+            outcome = 'failure';
+            color = 0xff4444;
+            outcomeText = '✗ Obstruction encountered';
+        }
+
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.25, 8, 8),
+            new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.95 })
+        );
+        mesh.position.copy(start.position);
+        scene.add(mesh);
+
+        // Trail
+        const trailGeo = new THREE.BufferGeometry();
+        const trailPositions = new Float32Array(30 * 3);
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+        const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({
+            color, transparent:true, opacity:0.5
+        }));
+        scene.add(trail);
+
+        proofAttempts.push({
+            mesh, trail, start: start.position.clone(), end: end.position.clone(),
+            progress: 0, speed: 0.008 + Math.random() * 0.005,
+            outcome, startName: start.userData.name, endName: end.userData.name,
+            trailHistory: [], logged: false
+        });
+    }
+
+    function updateProofAttempts() {
+        for (let i = proofAttempts.length - 1; i >= 0; i--) {
+            const p = proofAttempts[i];
+            p.progress += p.speed;
+            const t = p.progress;
+            const pos = new THREE.Vector3().lerpVectors(p.start, p.end, Math.min(t, 1));
+            // Add slight wave motion
+            pos.y += Math.sin(t * Math.PI * 2) * 0.3;
+            p.mesh.position.copy(pos);
+
+            // Update trail
+            p.trailHistory.push(pos.clone());
+            if (p.trailHistory.length > 10) p.trailHistory.shift();
+            const trailPos = p.trail.geometry.attributes.position.array;
+            for (let j = 0; j < 10; j++) {
+                if (j < p.trailHistory.length) {
+                    trailPos[j*3] = p.trailHistory[j].x;
+                    trailPos[j*3+1] = p.trailHistory[j].y;
+                    trailPos[j*3+2] = p.trailHistory[j].z;
+                }
+            }
+            p.trail.geometry.attributes.position.needsUpdate = true;
+            p.trail.geometry.setDrawRange(0, p.trailHistory.length);
+
+            if (t >= 1 && !p.logged) {
+                p.logged = true;
+                addProofLogEntry(p);
+                if (p.outcome === 'success') sound.proofSuccess();
+                else if (p.outcome === 'failure') sound.proofFail();
+                else sound.proofPartial();
+                spawnBurst(p.end, p.outcome === 'success' ? 8 : 3);
+            }
+
+            if (t >= 1.3) {
+                scene.remove(p.mesh);
+                scene.remove(p.trail);
+                p.mesh.geometry.dispose();
+                p.mesh.material.dispose();
+                p.trail.geometry.dispose();
+                p.trail.material.dispose();
+                proofAttempts.splice(i, 1);
+            }
+        }
+    }
+
+    function addProofLogEntry(p) {
+        const entry = document.createElement('div');
+        entry.className = 'pl-entry ' + p.outcome;
+        const time = new Date().toLocaleTimeString();
+        entry.innerHTML = `<span style="opacity:0.6">[${time}]</span> ${p.startName} → ${p.endName}: ${p.outcome === 'success' ? '✓' : p.outcome === 'failure' ? '✗' : '◐'}`;
+        proofLogEl.insertBefore(entry, proofLogEl.firstChild);
+        while (proofLogEl.children.length > 20) proofLogEl.removeChild(proofLogEl.lastChild);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INTERACTION
+    // ═══════════════════════════════════════════════════════════════
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let hoveredSphere = null;
+    // Global drag state used by multiple UI handlers (tooltip / header dragging)
+    let isDragging = false;
+    let dragOffX = 0;
+    let dragOffY = 0;
+
+    window.addEventListener('click', (event) => {
+        if (event.target.closest('#formula-builder') || event.target.closest('#legend-overlay') ||
+            event.target.closest('#export-modal') || event.target.closest('.top-btn') ||
+            event.target.closest('#legend-btn')) return;
+        mouse.x = (event.clientX/window.innerWidth)*2-1;
+        mouse.y = -(event.clientY/window.innerHeight)*2+1;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(problemSpheres);
+        if (hits.length>0) {
+            const sel = hits[0].object;
+            selectedSphere = sel;
+            sound.click();
+            document.getElementById('currentView').innerHTML =
+                '<span class="highlight">Selected: '+sel.userData.name+'</span><br>'+
+                'Obstruction Index: '+sel.userData.obstruction.toFixed(2)+'<br>'+
+                'Corridor: '+sel.userData.corridor;
+            problemSpheres.forEach(s => { s.material.emissiveIntensity=0.5; });
+            if (glowRing) { scene.remove(glowRing); glowRing.geometry.dispose(); glowRing.material.dispose(); }
+            const ringGeo = new THREE.RingGeometry(0.5,0.8,32);
+            const ringMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.6, side:THREE.DoubleSide, depthWrite:false });
+            glowRing = new THREE.Mesh(ringGeo, ringMat);
+            glowRing.position.copy(sel.position);
+            scene.add(glowRing);
+        }
+    });
+
+    let time=0;
+    let proofSpawnTimer = 0;
+    function animate() {
+        requestAnimationFrame(animate);
+        time+=0.01;
+        problemSpheres.forEach((sphere, i) => {
+            if (sphere.userData.particles) sphere.userData.particles.forEach(p => {
+                p.angle+=p.speed;
+                p.mesh.position.x=Math.cos(p.angle)*0.8;
+                p.mesh.position.y=Math.sin(p.angle)*0.8;
+            });
+            const scale=1+Math.sin(time*2+i)*0.1*sphere.userData.obstruction;
+            sphere.scale.set(scale,scale,scale);
+        });
+        formulaTexts.forEach((s,i) => {
+            s.position.y+=Math.sin(time+i)*0.01;
+            s.rotation.z=Math.sin(time*0.5)*0.1;
+        });
+        const pos = particleGeo.attributes.position.array;
+        for (let i=0; i<particleCount; i++) {
+            pos[i*3]+=velocities[i].x; pos[i*3+1]+=velocities[i].y; pos[i*3+2]+=velocities[i].z;
+            if (pos[i*3]>25) pos[i*3]=-25; if (pos[i*3]<-25) pos[i*3]=25;
+            if (pos[i*3+1]>10) pos[i*3+1]=-10; if (pos[i*3+1]<-10) pos[i*3+1]=10;
+            if (pos[i*3+2]>25) pos[i*3+2]=-25; if (pos[i*3+2]<-25) pos[i*3+2]=25;
+        }
+        particleGeo.attributes.position.needsUpdate=true;
+        connections.forEach((conn,i) => { conn.line.material.opacity=0.2+Math.sin(time+i)*0.1; });
+        connectionPulses.forEach(p => { const t=(Math.sin(time*p.speed+p.offset)+1)*0.5; p.mesh.position.lerpVectors(p.start,p.end,t); });
+        if (selectedSphere) {
+            const b = 1 + fbRx.envGlow * 0.35;
+            selectedSphere.material.emissiveIntensity = Math.min((0.8+Math.sin(time*3)*0.2)*b, 3);
+            if (glowRing) {
+                glowRing.material.opacity = Math.min((0.3+Math.sin(time*3)*0.3)*b, 1);
+                const rs = (1+Math.sin(time*3+1)*0.15)*(1+fbRx.envGlow*0.08);
+                glowRing.scale.set(rs,rs,rs); glowRing.lookAt(camera.position);
+                glowRing.material.color.setHSL(Math.max(0.55-Math.min(fbRx.envGlow*0.08,0.45),0.1),1,0.6);
+            }
+        }
+        tunnels.forEach((t,i) => { t.rotation.x = Math.sin(time * 0.15 + i * 1.2) * 0.6; });
+
+        // Heat map animation
+        if (heatMapsVisible) {
+            heatMaps.forEach((h, i) => {
+                const pulse = 1 + Math.sin(time * 1.5 + i) * 0.15 * h.userData.obstruction;
+                const size = h.userData.baseSize * pulse;
+                h.scale.set(size, size, 1);
+                h.material.opacity = 0.4 + h.userData.obstruction * 0.3 + Math.sin(time * 2 + i) * 0.1;
+            });
+        }
+
+        // Proof path spawning
+        if (proofPathsActive) {
+            proofSpawnTimer += 0.016;
+            if (proofSpawnTimer > 1.5 && proofAttempts.length < 8) {
+                spawnProofAttempt();
+                proofSpawnTimer = 0;
+            }
+            updateProofAttempts();
+        }
+
+        for (let i=fbRx.burstParticles.length-1; i>=0; i--) {
+            const p = fbRx.burstParticles[i]; p.position.x+=p.userData.vx; p.position.y+=p.userData.vy; p.position.z+=p.userData.vz;
+            p.userData.vx*=0.97; p.userData.vy*=0.97; p.userData.vz*=0.97;
+            p.userData.life-=p.userData.decay; p.material.opacity=Math.max(p.userData.life,0); p.scale.setScalar(p.userData.life);
+            if (p.userData.life<=0) { scene.remove(p); p.material.dispose(); fbRx.burstParticles.splice(i,1); }
+        }
+        if (fbRx.envGlow > 0.01 || fbRx.burstParticles.length > 0) {
+            scene.fog.density += ((0.02+fbRx.envGlow*0.006)-scene.fog.density)*0.015;
+            const amb = scene.children.find(c=>c.isAmbientLight);
+            if (amb) amb.intensity = 2 + fbRx.envGlow * 0.4;
+            if (selectedSphere) {
+                connections.forEach((conn,ci) => {
+                    const cp = connectionPulses[ci];
+                    if (cp && (cp.start.distanceTo(selectedSphere.position)<0.1||cp.end.distanceTo(selectedSphere.position)<0.1))
+                        conn.line.material.opacity = Math.min(0.2+Math.sin(time+ci)*0.1+fbRx.envGlow*0.3, 0.9);
+                });
+            }
+        } else {
+            fbRx.idleTime += 0.016;
+            if (fbRx.idleTime > 3) { scene.fog.density += (0.02-scene.fog.density)*0.01; }
+        }
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect=window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // FORMULA BUILDER (initialize only if builder exists to avoid null DOM errors)
+    // ═══════════════════════════════════════════════════════════════
+    (function initFormulaBuilderIfPresent(){
+      if (!document.getElementById('formula-builder')) {
+        console.warn('Formula builder not found in DOM — skipping initialization.');
+        return;
+      }
+
+      const MATH_SYMBOLS = {
+        logic: [
+            { sym:'∀', desc:'Universal quantifier — "for all"' },
+            { sym:'∃', desc:'Existential quantifier — "there exists"' },
+            { sym:'∄', desc:'Negated existence' },
+            { sym:'⇒', desc:'Material implication' },
+            { sym:'⇔', desc:'Logical equivalence' },
+            { sym:'¬', desc:'Negation' },
+            { sym:'∧', desc:'Logical AND' },
+            { sym:'∨', desc:'Logical OR' },
+            { sym:'⊕', desc:'Exclusive OR' },
+            { sym:'⊢', desc:'Proves / entails' },
+            { sym:'⊨', desc:'Models' },
+            { sym:'∴', desc:'Therefore' },
+        ],
+        sets: [
+            { sym:'∈', desc:'Element of' },
+            { sym:'∉', desc:'Not element of' },
+            { sym:'⊂', desc:'Proper subset' },
+            { sym:'⊆', desc:'Subset or equal' },
+            { sym:'∪', desc:'Union' },
+            { sym:'∩', desc:'Intersection' },
+            { sym:'∖', desc:'Set difference' },
+            { sym:'∅', desc:'Empty set' },
+            { sym:'ℕ', desc:'Natural numbers' },
+            { sym:'ℤ', desc:'Integers' },
+            { sym:'ℚ', desc:'Rationals' },
+            { sym:'ℝ', desc:'Reals' },
+            { sym:'ℂ', desc:'Complex numbers' },
+            { sym:'℘', desc:'Power set' },
+        ],
+        calc: [
+            { sym:'∑', desc:'Summation' },
+            { sym:'∏', desc:'Product' },
+            { sym:'∫', desc:'Integral' },
+            { sym:'∮', desc:'Contour integral' },
+            { sym:'∂', desc:'Partial derivative' },
+            { sym:'∇', desc:'Gradient / del' },
+            { sym:'Δ', desc:'Laplacian / change' },
+            { sym:'∝', desc:'Proportional to' },
+            { sym:'∞', desc:'Infinity' },
+            { sym:'lim', desc:'Limit' },
+            { sym:'→', desc:'Maps to / approaches' },
+            { sym:'↦', desc:'Function mapping' },
+        ],
+        rels: [
+            { sym:'=', desc:'Equals' },
+            { sym:'≠', desc:'Not equal' },
+            { sym:'<', desc:'Less than' },
+            { sym:'>', desc:'Greater than' },
+            { sym:'≤', desc:'Less or equal' },
+            { sym:'≥', desc:'Greater or equal' },
+            { sym:'≈', desc:'Approximately' },
+            { sym:'≡', desc:'Congruent / equivalent' },
+            { sym:'≢', desc:'Not congruent' },
+            { sym:'≅', desc:'Isomorphic' },
+            { sym:'∼', desc:'Similar / distributed' },
+            { sym:'⊥', desc:'Orthogonal / bottom' },
+            { sym:'∥', desc:'Parallel' },
+            { sym:'∠', desc:'Angle' },
+            { sym:'√', desc:'Square root' },
+        ],
+        greek: [
+            { sym:'α', desc:'alpha' }, { sym:'β', desc:'beta' }, { sym:'γ', desc:'gamma' },
+            { sym:'δ', desc:'delta' }, { sym:'ε', desc:'epsilon' }, { sym:'ζ', desc:'zeta' },
+            { sym:'η', desc:'eta' }, { sym:'θ', desc:'theta' }, { sym:'κ', desc:'kappa' },
+            { sym:'λ', desc:'lambda' }, { sym:'μ', desc:'mu' }, { sym:'ν', desc:'nu' },
+            { sym:'ξ', desc:'xi' }, { sym:'π', desc:'pi' }, { sym:'ρ', desc:'rho' },
+            { sym:'σ', desc:'sigma' }, { sym:'τ', desc:'tau' }, { sym:'φ', desc:'phi' },
+            { sym:'χ', desc:'chi' }, { sym:'ψ', desc:'psi' }, { sym:'ω', desc:'omega' },
+            { sym:'Γ', desc:'Gamma' }, { sym:'Δ', desc:'Delta' }, { sym:'Θ', desc:'Theta' },
+            { sym:'Λ', desc:'Lambda' }, { sym:'Ξ', desc:'Xi' }, { sym:'Π', desc:'Pi' },
+            { sym:'Σ', desc:'Sigma' }, { sym:'Φ', desc:'Phi' }, { sym:'Ψ', desc:'Psi' },
+            { sym:'Ω', desc:'Omega' },
+        ],
+        nums: [
+            { sym:'0', desc:'Zero' }, { sym:'1', desc:'One' }, { sym:'2', desc:'Two' },
+            { sym:'3', desc:'Three' }, { sym:'4', desc:'Four' }, { sym:'5', desc:'Five' },
+            { sym:'6', desc:'Six' }, { sym:'7', desc:'Seven' }, { sym:'8', desc:'Eight' },
+            { sym:'9', desc:'Nine' }, { sym:'+', desc:'Plus' }, { sym:'-', desc:'Minus' },
+            { sym:'×', desc:'Times' }, { sym:'÷', desc:'Divide' }, { sym:'/', desc:'Slash' },
+            { sym:'^', desc:'Power' }, { sym:'(', desc:'Open paren' }, { sym:')', desc:'Close paren' },
+            { sym:'[', desc:'Open bracket' }, { sym:']', desc:'Close bracket' },
+            { sym:'{', desc:'Open brace' }, { sym:'}', desc:'Close brace' },
+            { sym:',', desc:'Comma' }, { sym:'.', desc:'Dot' }, { sym:':', desc:'Colon' },
+            { sym:'n', desc:'Variable n' }, { sym:'k', desc:'Variable k' }, { sym:'x', desc:'Variable x' },
+        ]
+      };
+
+      // Robust formula-builder element references: scoped queries inside the builder container
+      const fbEl = document.getElementById('formula-builder');
+      const fb = {
+        el: fbEl,
+        body: fbEl.querySelector('.fb-body') || fbEl.querySelector('#fb-body'),
+        palette: fbEl.querySelector('#fb-palette') || fbEl.querySelector('.fb-palette'),
+        dropZone: fbEl.querySelector('#fb-drop-zone') || fbEl.querySelector('.fb-drop-zone'),
+        tooltip: fbEl.querySelector('.fb-symbol-tooltip') || fbEl.querySelector('.fb-tooltip'),
+        saveBtn: fbEl.querySelector('#fb-save'),
+        clearBtn: fbEl.querySelector('#fb-clear'),
+        validateBtn: fbEl.querySelector('#fb-validate'),
+        targetLabel: fbEl.querySelector('#fb-target'),
+        approachInput: fbEl.querySelector('#fb-approach'),
+        savedList: fbEl.querySelector('#fb-saved-list'),
+        savedSection: fbEl.querySelector('#fb-saved-section'),
+        savedTarget: fbEl.querySelector('#fb-saved-target'),
+        validationEl: fbEl.querySelector('#fb-validation'),
+        templatesEl: fbEl.querySelector('#fb-templates'),
+        currentTab: 'logic',
+        formulaTokens: [],
+        savedFormulas: {},
+        isMinimized: false,
+      };
+
+      function renderPalette(tab) {
+        fb.palette.innerHTML = '';
+        const symbols = MATH_SYMBOLS[tab];
+        if (!symbols) return;
+        symbols.forEach((s) => {
+            const el = document.createElement('div');
+            el.className = 'fb-symbol';
+            el.textContent = s.sym;
+            el.draggable = true;
+            el.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({ sym: s.sym, desc: s.desc }));
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+            el.addEventListener('click', () => {
+                fb.formulaTokens.push({ sym: s.sym, desc: s.desc });
+                renderFormula();
+                validateCurrentFormula();
+                adjustRx(1);
+                sound.play(600 + Math.random()*200, 0.04, 'sine', 0.04);
+            });
+            el.addEventListener('mouseenter', (e) => {
+                if (fb.tooltip) {
+                  fb.tooltip.textContent = s.desc;
+                  fb.tooltip.style.display = 'block';
+                  fb.tooltip.style.left = Math.min(e.clientX + 15, window.innerWidth - 230) + 'px';
+                  fb.tooltip.style.top = (e.clientY - 30) + 'px';
+                }
+                sound.hover();
+            });
+            el.addEventListener('mouseleave', () => { if (fb.tooltip) fb.tooltip.style.display = 'none'; });
+            fb.palette.appendChild(el);
+        });
+      }
+
+      function renderTemplates() {
+        fb.templatesEl.innerHTML = '';
+        const target = fb.targetLabel && fb.targetLabel.textContent;
+        if (target === 'Click a problem sphere') {
+            // Show all templates
+            Object.keys(FORMULA_TEMPLATES).forEach(name => {
+                const t = FORMULA_TEMPLATES[name];
+                const btn = document.createElement('button');
+                btn.className = 'fb-template-btn';
+                btn.textContent = t.label;
+                btn.title = name;
+                btn.addEventListener('click', () => {
+                    fb.formulaTokens = t.tokens.map(tk => ({...tk}));
+                    renderFormula();
+                    validateCurrentFormula();
+                    adjustRx(1);
+                    sound.click();
+                });
+                fb.templatesEl.appendChild(btn);
+            });
+        } else if (FORMULA_TEMPLATES[target]) {
+            const t = FORMULA_TEMPLATES[target];
+            const btn = document.createElement('button');
+            btn.className = 'fb-template-btn';
+            btn.innerHTML = '⚡ ' + t.label;
+            btn.addEventListener('click', () => {
+                fb.formulaTokens = t.tokens.map(tk => ({...tk}));
+                renderFormula();
+                validateCurrentFormula();
+                adjustRx(1);
+                sound.click();
+            });
+            fb.templatesEl.appendChild(btn);
+        }
+      }
+
+      // Wire up tab buttons (scoped) and initial palette
+      document.querySelectorAll('[data-tab]').forEach(btn => {
+          btn.addEventListener('click', () => {
+              document.querySelectorAll('[data-tab]').forEach(b => {
+                  b.style.background = 'rgba(0,255,255,0.2)';
+              });
+              btn.style.background = 'rgba(0,255,255,0.4)';
+              fb.currentTab = btn.dataset.tab;
+              renderPalette(fb.currentTab);
+              sound.click();
+          });
+      });
+      document.querySelector('[data-tab="logic"]').style.background = 'rgba(0,255,255,0.4)';
+      renderPalette('logic');
+
+      // Drag/drop for the builder (scoped)
+      fb.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; fb.dropZone.classList.add('drag-over'); });
+      fb.dropZone.addEventListener('dragleave', () => { fb.dropZone.classList.remove('drag-over'); });
+      fb.dropZone.addEventListener('drop', (e) => {
+          e.preventDefault(); fb.dropZone.classList.remove('drag-over');
+          try {
+              const d = JSON.parse(e.dataTransfer.getData('text/plain'));
+              fb.formulaTokens.push({ sym:d.sym, desc:d.desc });
+              renderFormula();
+              validateCurrentFormula();
+              adjustRx(1);
+              sound.play(600, 0.05, 'sine', 0.05);
+          } catch(ex) {}
+      });
+
+      function removeToken(idx) {
+          fb.formulaTokens.splice(idx, 1);
+          renderFormula();
+          validateCurrentFormula();
+          adjustRx(-1);
+          sound.play(300, 0.04, 'sine', 0.04);
+      }
+
+      function renderFormula() {
+          fb.dropZone.innerHTML = '';
+          if (fb.formulaTokens.length === 0) {
+              fb.dropZone.innerHTML = '<span style="color:rgba(255,255,255,0.2);font-size:11px;width:100%;text-align:center;">Drag symbols here to build a formula</span>';
+              return;
+          }
+          fb.formulaTokens.forEach((t, i) => {
+              const token = document.createElement('span');
+              token.className = 'fb-token';
+              token.title = t.desc;
+              token.innerHTML = t.sym + '<span class="fb-token-del" data-idx="' + i + '">&times;</span>';
+              token.querySelector('.fb-token-del').addEventListener('click', () => removeToken(i));
+              fb.dropZone.appendChild(token);
+          });
+      }
+
+      function validateCurrentFormula() {
+          if (!fb.validationEl) return;
+          if (fb.formulaTokens.length === 0) {
+              fb.validationEl.className = '';
+              fb.validationEl.innerHTML = 'Awaiting formula input...';
+              fb.dropZone.classList.remove('valid', 'invalid');
+              return;
+          }
+          const result = validateFormula(fb.formulaTokens);
+          if (result.valid) {
+              fb.validationEl.className = 'valid';
+              fb.dropZone.classList.remove('invalid');
+              fb.dropZone.classList.add('valid');
+              let html = `<span class="v-score">✓ Valid</span> — Score: ${result.score}/100`;
+              if (result.warnings.length > 0) {
+                  html += `<div class="v-errors">Warnings: ${result.warnings.join('; ')}</div>`;
+              }
+              fb.validationEl.innerHTML = html;
+          } else {
+              fb.validationEl.className = 'invalid';
+              fb.dropZone.classList.remove('valid');
+              fb.dropZone.classList.add('invalid');
+              let html = `<span class="v-score">✗ Invalid</span> — Score: ${result.score}/100`;
+              if (result.errors.length > 0) {
+                  html += `<div class="v-errors">Errors: ${result.errors.slice(0, 3).join('; ')}</div>`;
+              }
+              if (result.warnings.length > 0) {
+                  html += `<div class="v-errors">Warnings: ${result.warnings.join('; ')}</div>`;
+              }
+              fb.validationEl.innerHTML = html;
+          }
+      }
+
+      // Safe event wiring — only attach if elements exist
+      if (fb.clearBtn) {
+        fb.clearBtn.addEventListener('click', () => {
+            const w = fb.formulaTokens.length;
+            fb.formulaTokens = [];
+            renderFormula();
+            validateCurrentFormula();
+            adjustRx(-w);
+            sound.click();
+        });
+      }
+      if (fb.validateBtn) {
+        fb.validateBtn.addEventListener('click', () => {
+            validateCurrentFormula();
+            const result = validateFormula(fb.formulaTokens);
+            if (result.valid) sound.valid();
+            else sound.invalid();
+        });
+      }
+      if (fb.saveBtn) {
+        fb.saveBtn.addEventListener('click', () => {
+            if (!fb.formulaTokens.length) { sound.error(); return; }
+            const target = fb.targetLabel && fb.targetLabel.textContent;
+            if (!target || target === 'Click a problem sphere') { sound.error(); return; }
+            const result = validateFormula(fb.formulaTokens);
+            if (!result.valid) {
+                sound.error();
+                if (fb.validationEl) fb.validationEl.innerHTML += '<div class="v-errors" style="color:#f88;margin-top:3px;">⚠ Saving invalid formula</div>';
+            }
+            const approach = (fb.approachInput && fb.approachInput.value.trim()) || 'Unnamed Approach';
+            const formulaStr = fb.formulaTokens.map(t => t.sym).join(' ');
+            if (!fb.savedFormulas[target]) fb.savedFormulas[target] = [];
+            fb.savedFormulas[target].push({
+                formula: formulaStr, approach,
+                desc: fb.formulaTokens.map(t => t.desc).join(' • '),
+                valid: result.valid,
+                score: result.score
+            });
+            adjustRx(0);
+            if (selectedSphere) spawnBurst(selectedSphere.position, 3);
+            sound.save();
+            fb.formulaTokens = [];
+            renderFormula();
+            validateCurrentFormula();
+            if (fb.approachInput) fb.approachInput.value = '';
+            renderSavedList(target);
+        });
+      }
+
+      function renderSavedList(target) {
+          const items = fb.savedFormulas[target];
+          if (!items || !items.length) { if (fb.savedSection) fb.savedSection.style.display = 'none'; return; }
+          if (fb.savedSection) fb.savedSection.style.display = 'block';
+          if (fb.savedTarget) fb.savedTarget.textContent = target;
+          if (fb.savedList) fb.savedList.innerHTML = '';
+          items.forEach((item, i) => {
+              const div = document.createElement('div');
+              div.className = 'fb-saved-item';
+              const validityIcon = item.valid ? '✓' : '✗';
+              const validityColor = item.valid ? '#0f0' : '#f88';
+              div.innerHTML = '<span><b>' + item.approach + '</b> <span style="color:'+validityColor+'">'+validityIcon+'</span> ['+item.score+']: ' + item.formula +
+                  '<span style="display:block;font-size:9px;opacity:0.5;">' + item.desc + '</span></span>' +
+                  '<span class="fb-saved-del" data-idx="' + i + '" data-target="' + target + '">&times;</span>';
+              div.querySelector('.fb-saved-del').addEventListener('click', (e) => {
+                  const t = e.target.dataset.target;
+                  const idx = parseInt(e.target.dataset.idx);
+                  fb.savedFormulas[t].splice(idx, 1);
+                  renderSavedList(t);
+                  sound.click();
+              });
+              if (fb.savedList) fb.savedList.appendChild(div);
+          });
+      }
+
+      // Safe close/minimize wiring
+      const fbCloseBtn = fbEl.querySelector('#fb-close');
+      if (fbCloseBtn) {
+        fbCloseBtn.addEventListener('click', () => {
+            fb.isMinimized = !fb.isMinimized;
+            if (fb.body) fb.body.style.display = fb.isMinimized ? 'none' : 'block';
+            fbCloseBtn.textContent = fb.isMinimized ? '□' : '_';
+            sound.click();
+            if (!fb.isMinimized) {
+                // remain open until user explicitly closes the formula builder
+            } else {
+                if (autoCloseTimers['fb']) { clearTimeout(autoCloseTimers['fb']); delete autoCloseTimers['fb']; }
+            }
+        });
+      }
+
+      // Dragging header guard
+      const fbHeader = fbEl.querySelector('.fb-header');
+      if (fbHeader && fb.el) {
+        // use the global isDragging/drag offsets declared above
+        fbHeader.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.fb-close')) return;
+            isDragging = true;
+            dragOffX = e.clientX - fb.el.getBoundingClientRect().left;
+            dragOffY = e.clientY - fb.el.getBoundingClientRect().top;
+            fb.el.style.cursor = 'grabbing';
+            function onMove(e2){
+              if(!isDragging) return;
+              fb.el.style.left = (e2.clientX - dragOffX) + 'px';
+              fb.el.style.top = (e2.clientY - dragOffY) + 'px';
+              fb.el.style.right = 'auto';
+            }
+            function onUp(){
+              isDragging = false; fb.el.style.cursor = '';
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+      }
+
+      const cvEl = document.getElementById('currentView');
+      if (cvEl) {
+          new MutationObserver(() => {
+              const txt = cvEl.textContent || '';
+              const m = txt.match(/Selected:\s*(.+)/);
+              if (m) {
+                  if (fb.targetLabel) fb.targetLabel.textContent = m[1];
+                  renderSavedList(m[1]);
+                  renderTemplates();
+              }
+          }).observe(cvEl, { childList: true, subtree: true, characterData: true });
+      }
+
+      // Initial templates render
+      renderTemplates();
+    })();
+
+    // ═══════════════════════════════════════════════════════════════
+    // LEGEND
+    // ═══════════════════════════════════════════════════════════════
+    const LEGEND_DATA = {
+        corridors: {
+            label: '🏰 Corridors',
+            items: [
+                { thumb:'🔍', name:'Logic Corridor', color:'#00ffff',
+                  desc:'Foundational framework for mathematical proof and reasoning.',
+                  purpose:'Maps the landscape of logical possibility.',
+                  premise:'All mathematical truths can be derived from axioms within a consistent formal system.',
+                  data:'Color: Cyan | Position: X=-15 | Barriers: Relativization' },
+                { thumb:'🔢', name:'Number Theory Corridor', color:'#ffaa00',
+                  desc:'Study of integers and prime numbers.',
+                  purpose:'Investigates deep structure of numbers and primes.',
+                  premise:'Primes follow hidden patterns analyzable via L-functions.',
+                  data:'Color: Orange | Position: X=-5 | Key Tool: Zeta Function' },
+                { thumb:'📍', name:'Geometry Corridor', color:'#00ff00',
+                  desc:'Study of shape, space, and continuous structures.',
+                  purpose:'Bridges physical space and abstract manifolds.',
+                  premise:'Geometric properties encoded in analytic equations.',
+                  data:'Color: Green | Position: X=5 | Field: Differential Geometry' },
+                { thumb:'💻', name:'Computation Corridor', color:'#ff00ff',
+                  desc:'Theory of computation and algorithmic limits.',
+                  purpose:'Defines tractable vs intractable problems.',
+                  premise:'Problems classified by computational resources required.',
+                  data:'Color: Magenta | Position: X=15 | Concept: NP-Completeness' },
+            ]
+        },
+        problems: {
+            label: '🌌 Problems',
+            items: [
+                { thumb:'🔬', name:'Twin Primes', obstruction:0.67,
+                  desc:'Infinitely many prime pairs differing by 2.',
+                  purpose:'Tests understanding of prime clustering.',
+                  premise:'Prime spacing follows predictable statistical patterns.',
+                  data:'Corridor: Number Theory | O: 0.67 | Zhang (2013) bounded gaps' },
+                { thumb:'🎯', name:'RH', obstruction:0.75,
+                  desc:'All non-trivial zeros of ζ(s) lie on Re(s)=1/2.',
+                  purpose:'Deepest understanding of prime distribution.',
+                  premise:'Zeta zeros control Prime Number Theorem error term.',
+                  data:'Corridor: Number Theory | O: 0.75 | Millennium Problem' },
+                { thumb:'➕', name:'abc', obstruction:0.75,
+                  desc:'For coprime a+b=c, rad(abc) rarely much smaller than c.',
+                  purpose:'Captures addition-multiplication relationship.',
+                  premise:'Prime factors distributed such that product not too small.',
+                  data:'Corridor: Number Theory | O: 0.75 | Mochizuki (2012) IUT' },
+                { thumb:'💡', name:'P vs NP', obstruction:0.94,
+                  desc:'Can quickly verified problems be quickly solved?',
+                  purpose:'Boundary between efficient computability and hardness.',
+                  premise:'Verifiable ≠ findable in polynomial time.',
+                  data:'Corridor: Computation | O: 0.94 | Millennium Problem' },
+                { thumb:'🌊', name:'Navier-Stokes', obstruction:0.80,
+                  desc:'Do 3D fluid flow solutions always exist and stay smooth?',
+                  purpose:'Fundamental fluid dynamics behavior.',
+                  premise:'Physical PDEs have globally smooth solutions.',
+                  data:'Corridor: Geometry | O: 0.80 | Millennium Problem' },
+                { thumb:'🔵', name:'Hodge', obstruction:0.75,
+                  desc:'Hodge classes as rational combinations of algebraic cycles.',
+                  purpose:'Links algebraic geometry and topology.',
+                  premise:'Topological structure determined by algebraic subvarieties.',
+                  data:'Corridor: Geometry | O: 0.75 | Millennium Problem' },
+                { thumb:'🧪', name:'GI', obstruction:0.50,
+                  desc:'Determine if two graphs are isomorphic in poly time.',
+                  purpose:'Boundary between easy and hard problems.',
+                  premise:'Graph structure efficiently distinguishable but mysterious.',
+                  data:'Corridor: Computation | O: 0.50 | Babai (2015) quasi-poly' },
+                { thumb:'🧠', name:'Collatz', obstruction:0.52,
+                  desc:'3n+1 problem: does every sequence reach 1?',
+                  purpose:'Chaotic iterated arithmetic operations.',
+                  premise:'Multiplication/division interplay leads to fixed point.',
+                  data:'Corridor: Computation | O: 0.52 | Verified up to 2^68' },
+            ]
+        },
+        barriers: {
+            label: '🚧 Proof Barriers',
+            items: [
+                { thumb:'🚧', name:'Relativization', color:'#ff0000',
+                  desc:'Baker-Gill-Solovay (1975): diagonalization cannot separate P from NP.',
+                  purpose:'Shows natural proof techniques are insufficient.',
+                  premise:'Relativizing proofs cannot separate P from NP.',
+                  data:'Color: Red | Position: X=-10 | 1975' },
+                { thumb:'🚧', name:'Natural Proofs', color:'#ff0000',
+                  desc:'Razborov-Rudich (1994): natural properties would break PRGs.',
+                  purpose:'Eliminates combinatorial approaches to P vs NP.',
+                  premise:'PRGs exist if P ≠ NP; natural proofs contradict this.',
+                  data:'Color: Red | Position: X=0 | 1994' },
+                { thumb:'🚧', name:'Algebrization', color:'#ff0000',
+                  desc:'Aaronson-Wigderson (2008): algebraic extensions also fail.',
+                  purpose:'Further restricts complexity separation toolbox.',
+                  premise:'Algebraic oracles exist for both P=NP and P≠NP.',
+                  data:'Color: Red | Position: X=10 | 2008' },
+            ]
+        },
+        elements: {
+            label: '✨ Scene Elements',
+            items: [
+                { thumb:'🌌', name:'Heat Map', color:'#ff6600',
+                  desc:'Volumetric glow around each problem sized by obstruction index.',
+                  purpose:'Visualizes proof difficulty as spatial extent.',
+                  premise:'Higher obstruction = larger "resistance field" around problem.',
+                  data:'Color: gradient | Blending: Additive | Size: 4+6*O' },
+                { thumb:'⚡', name:'Proof Paths', color:'#00ff00',
+                  desc:'Animated particles traveling connections with success/failure outcomes.',
+                  purpose:'Simulates proof attempts between related problems.',
+                  premise:'Proof attempts have probabilistic success based on combined obstruction.',
+                  data:'Colors: green=success, yellow=partial, red=failure' },
+                { thumb:'🌌', name:'Connection Lines', color:'#44ffcc',
+                  desc:'Lines connecting related problem spheres.',
+                  purpose:'Shows intellectual network between problems.',
+                  premise:'Similar obstruction levels share structural characteristics.',
+                  data:'Color: Teal | Pulses travel along lines' },
+                { thumb:'🌟', name:'Obstruction Gradient',
+                  desc:'Spheres colored green→yellow→red by obstruction.',
+                  purpose:'Instantly conveys relative difficulty.',
+                  premise:'Difficulty can be visually encoded via color.',
+                  data:'Range: Green (O=0) → Red (O=1.0)' },
+                { thumb:'📄', name:'Floating Formulas',
+                  desc:'Mathematical formulas floating in 3D space.',
+                  purpose:'Anchors concepts to symbolic expressions.',
+                  premise:'Key relationships expressed as compact formulas.',
+                  data:'Count: 5 | Font: Courier New | Color: Gold' },
+                { thumb:'🌟', name:'Selection Glow Ring',
+                  desc:'Ring around selected sphere, reactive to formula activity.',
+                  purpose:'Interactive feedback for selection.',
+                  premise:'Selection should provide responsive visual feedback.',
+                  data:'Ring: r=0.5-0.8 | Color shifts with formulas' },
+                { thumb:'🟡', name:'Proof Particles',
+                  desc:'1000 yellow dots drifting through scene.',
+                  purpose:'Represents countless proof attempts.',
+                  premise:'Mathematical progress is continuous attempts.',
+                  data:'Count: 1000 | Color: Yellow' },
+            ]
+        }
+    };
+
+    const legendOverlay = document.getElementById('legend-overlay');
+    const legendTabs = document.getElementById('lg-tabs');
+    const legendContent = document.getElementById('lg-content');
+    const legendSearch = document.getElementById('lg-search');
+    const legendBtn = document.getElementById('legend-btn');
+    let legendActiveTab = 'corridors';
+    let legendFilter = '';
+
+    function renderLegendTabs() {
+        legendTabs.innerHTML = '';
+        Object.keys(LEGEND_DATA).forEach(key => {
+            const tab = document.createElement('div');
+            tab.className = 'lg-tab' + (key === legendActiveTab ? ' active' : '');
+            tab.textContent = LEGEND_DATA[key].label;
+            tab.addEventListener('click', () => { legendActiveTab = key; renderLegend(); sound.click(); });
+            legendTabs.appendChild(tab);
+        });
+    }
+
+    function renderLegend() {
+        const data = LEGEND_DATA[legendActiveTab];
+        if (!data) return;
+        legendContent.innerHTML = '';
+        const filter = legendFilter.toLowerCase();
+        data.items.forEach(item => {
+            if (filter && !item.name.toLowerCase().includes(filter) && !item.desc.toLowerCase().includes(filter)) return;
+            const div = document.createElement('div');
+            div.className = 'lg-item';
+            const thumbBg = item.color || 'rgba(0,255,255,0.15)';
+            div.innerHTML = '<div class="lg-thumb" style="background:'+thumbBg+'20;border-color:'+thumbBg+'40;">'+(item.thumb||'❓')+'</div>' +
+                '<div class="lg-info">' +
+                '<div class="lg-title">' + item.name + (item.obstruction !== undefined ? ' <span style="font-size:10px;opacity:0.5;">[O='+item.obstruction.toFixed(2)+']</span>' : '') + '</div>' +
+                '<div class="lg-desc">' + item.desc + '</div>' +
+                '<div class="lg-premise">📖 Premise: ' + item.premise + '</div>' +
+                '<div class="lg-meta">' +
+                '<span>🎯 Purpose: ' + item.purpose + '</span>' +
+                '<span>📊 ' + item.data + '</span>' +
+                '</div></div>';
+            legendContent.appendChild(div);
+        });
+        if (legendContent.children.length === 0) {
+            legendContent.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(0,255,255,0.4);">No items match your filter.</div>';
+        }
+    }
+
+    const AUTO_CLOSE_MS = 3000;
+    const autoCloseTimers = {};
+    function setAutoClose(key, fn, ms = AUTO_CLOSE_MS) {
+        if (autoCloseTimers[key]) clearTimeout(autoCloseTimers[key]);
+        autoCloseTimers[key] = setTimeout(() => { fn(); delete autoCloseTimers[key]; }, ms);
+    }
+
+    function openLegend() {
+        legendOverlay.classList.add('open');
+        renderLegendTabs();
+        renderLegend();
+        sound.click();
+    }
+    function closeLegend() {
+        legendOverlay.classList.remove('open');
+        sound.click();
+        if (autoCloseTimers['legend']) { clearTimeout(autoCloseTimers['legend']); delete autoCloseTimers['legend']; }
+    }
+
+    legendBtn.addEventListener('click', openLegend);
+    document.getElementById('lg-close').addEventListener('click', closeLegend);
+    legendOverlay.addEventListener('click', (e) => { if (e.target === legendOverlay) closeLegend(); });
+    legendSearch.addEventListener('input', () => { legendFilter = legendSearch.value; renderLegend(); });
+
+    // Info panel toggle and auto-close
+    const infoEl = document.getElementById('info');
+    const infoToggleBtn = document.getElementById('info-toggle');
+    let infoVisible = true;
+    function closeInfo() {
+        infoEl.style.opacity = 0;
+        infoEl.style.pointerEvents = 'none';
+        infoToggleBtn.textContent = 'Show';
+        infoVisible = false;
+        sound.click();
+        // Show mini-toggle near the formula builder for quick reopen
+        const mini = document.getElementById('info-mini-toggle');
+        if (mini) mini.style.display = 'flex';
+        if (autoCloseTimers['info']) { clearTimeout(autoCloseTimers['info']); delete autoCloseTimers['info']; }
+    }
+    function openInfo() {
+        infoEl.style.opacity = 1;
+        infoEl.style.pointerEvents = 'auto';
+        infoToggleBtn.textContent = 'Hide';
+        infoVisible = true;
+        sound.click();
+        // Hide mini-toggle when full info is open
+        const mini = document.getElementById('info-mini-toggle');
+        if (mini) mini.style.display = 'none';
+        // no auto-close: user must explicitly close the info panel
+    }
+    infoToggleBtn.addEventListener('click', () => {
+        if (infoVisible) {
+            closeInfo();
+        } else {
+            openInfo();
+        }
+    });
+    // wire up the mini toggle so clicking it opens the info panel
+    const infoMini = document.getElementById('info-mini-toggle');
+    if (infoMini) {
+        infoMini.addEventListener('click', () => {
+            openInfo();
+            // provide quick feedback
+            sound.click();
+        });
+    }
+    // auto-start: none — info panel will stay open until user closes it
+
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        if (e.key === 'l' || e.key === 'L') {
+            if (legendOverlay.classList.contains('open')) closeLegend(); else openLegend();
+        } else if (e.key === 'p' || e.key === 'P') {
+            toggleProofPaths();
+        } else if (e.key === 'h' || e.key === 'H') {
+            toggleHeatMap();
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // EXPORT, SOUND, PROOF PATHS, HEAT MAP TOGGLES
+    // ═══════════════════════════════════════════════════════════════
+    const soundBtn = document.getElementById('sound-btn');
+    soundBtn.addEventListener('click', () => {
+        sound.enabled = !sound.enabled;
+        soundBtn.classList.toggle('active', sound.enabled);
+        if (sound.enabled) sound.toggle(true);
+    });
+
+    const exportBtn = document.getElementById('export-btn');
+    const exportModal = document.getElementById('export-modal');
+    const exportImage = document.getElementById('export-image');
+    let lastExportDataUrl = null;
+
+    // Paper button — open paper in an in-page modal (with option to open new tab)
+    const paperBtn = document.getElementById('paper-btn');
+    const paperModal = document.getElementById('paper-modal');
+    const paperIframe = document.getElementById('paper-iframe');
+    const paperClose = document.getElementById('paper-close');
+    const paperBack = document.getElementById('paper-back');
+    const paperOpenNew = document.getElementById('paper-open-new');
+
+    function openPaperModal() {
+        if (!paperModal) { window.open('paper.html', '_blank'); return; }
+        sound.click();
+        paperIframe.src = 'paper.html';
+        paperModal.style.display = 'flex';
+        // ensure modal stays until user closes
+    }
+    function closePaperModal() {
+        if (!paperModal) return;
+        paperModal.style.display = 'none';
+        // clear iframe to release resources
+        try { paperIframe.src = 'about:blank'; } catch(e) {}
+        sound.click();
+    }
+
+    if (paperBtn) {
+        paperBtn.addEventListener('click', openPaperModal);
+    }
+    if (paperClose) paperClose.addEventListener('click', closePaperModal);
+    if (paperBack) paperBack.addEventListener('click', closePaperModal);
+    if (paperOpenNew) {
+        paperOpenNew.addEventListener('click', () => {
+            const url = 'paper.html';
+            window.open(url, '_blank');
+            sound.click();
+        });
+    }
+
+    // Open standalone Formula Builder app
+    const formulaAppBtn = document.getElementById('formula-app-btn');
+    if (formulaAppBtn) {
+        formulaAppBtn.addEventListener('click', () => {
+            window.open('formula.html', '_blank');
+            sound.click();
+        });
+    }
+
+    exportBtn.addEventListener('click', () => {
+        sound.click();
+        try {
+            lastExportDataUrl = renderer.domElement.toDataURL('image/png');
+            exportImage.src = lastExportDataUrl;
+            exportModal.classList.add('open');
+        } catch(e) {
+            alert('Export failed: ' + e.message);
+        }
+    });
+    document.getElementById('em-close').addEventListener('click', () => {
+        exportModal.classList.remove('open');
+        sound.click();
+        if (autoCloseTimers['export']) { clearTimeout(autoCloseTimers['export']); delete autoCloseTimers['export']; }
+    });
+    document.getElementById('em-download').addEventListener('click', () => {
+        if (!lastExportDataUrl) return;
+        const a = document.createElement('a');
+        a.href = lastExportDataUrl;
+        a.download = 'sot_scene_' + new Date().toISOString().replace(/[:.]/g, '-').slice(0,19) + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        sound.save();
+    });
+    exportModal.addEventListener('click', (e) => {
+        if (e.target === exportModal) {
+            exportModal.classList.remove('open');
+            sound.click();
+        }
+    });
+
+    const proofBtn = document.getElementById('proof-btn');
+    const proofLog = document.getElementById('proof-log');
+    function toggleProofPaths() {
+        proofPathsActive = !proofPathsActive;
+        proofBtn.classList.toggle('active', proofPathsActive);
+        proofLog.classList.toggle('open', proofPathsActive);
+        sound.toggle(proofPathsActive);
+        if (proofPathsActive) {
+            // remain active until user toggles proofs off
+        } else {
+            if (autoCloseTimers['proofs']) { clearTimeout(autoCloseTimers['proofs']); delete autoCloseTimers['proofs']; }
+            // Clean up existing attempts
+            proofAttempts.forEach(p => {
+                scene.remove(p.mesh); scene.remove(p.trail);
+                p.mesh.geometry.dispose(); p.mesh.material.dispose();
+                p.trail.geometry.dispose(); p.trail.material.dispose();
+            });
+            proofAttempts.length = 0;
+        }
+    }
+    proofBtn.addEventListener('click', toggleProofPaths);
+
+    const heatmapBtn = document.getElementById('heatmap-btn');
+    function toggleHeatMap() {
+        heatMapsVisible = !heatMapsVisible;
+        heatmapBtn.classList.toggle('active', heatMapsVisible);
+        heatMaps.forEach(h => { h.visible = heatMapsVisible; });
+        sound.toggle(heatMapsVisible);
+    }
+    heatmapBtn.addEventListener('click', toggleHeatMap);
+
+    // ═══════════════════════════════════════════════════════════════
+    // LEGEND EXPORT
+    // ═══════════════════════════════════════════════════════════════
+    function exportLegendJSON() {
+        const data = {
+            exportedAt: new Date().toISOString(),
+            totalItems: Object.keys(LEGEND_DATA).reduce((sum, k) => sum + LEGEND_DATA[k].items.length, 0),
+            ...LEGEND_DATA
+        };
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sot_legend_' + new Date().toISOString().slice(0,10) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        sound.save();
+    }
+
+    function exportLegendPDF() {
+        let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>SOT Legend</title>';
+        html += '<style>@page{margin:1.5cm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",Arial,sans-serif;background:#0a0e1a;color:#c8d6e5;padding:30px}h1{color:#0ff;font-size:24px;border-bottom:2px solid #0ff;padding-bottom:8px;margin-bottom:20px}h2{color:#0ff;font-size:18px;margin:24px 0 12px;padding-bottom:4px;border-bottom:1px solid rgba(0,255,255,0.3)}.item{background:rgba(255,255,255,0.04);border:1px solid rgba(0,255,255,0.15);border-radius:6px;padding:12px 14px;margin-bottom:10px}.item h3{color:#fff;font-size:15px;margin-bottom:4px}.item .desc{color:#aab;font-size:13px;margin-bottom:4px;line-height:1.5}.item .purpose{color:#0ff;font-size:12px;margin-bottom:2px}.item .premise{color:#ffa;font-size:12px;padding-left:10px;border-left:2px solid rgba(255,255,170,0.4);margin-bottom:2px}.item .data{color:#6af;font-size:11px}@media print{body{background:#fff;color:#333}h1,h2,.item .purpose{color:#069}.item{background:#f5f9ff;border-color:#9cf}.item h3{color:#000}.item .premise{color:#960}.item .data{color:#069}.item .desc{color:#555}}</style></head><body>';
+        html += '<h1>🔬 SOT Visualization Legend</h1>';
+        html += '<p>Generated: ' + new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) + '</p>';
+        Object.keys(LEGEND_DATA).forEach(key => {
+            const tab = LEGEND_DATA[key];
+            html += '<h2>' + tab.label + '</h2>';
+            tab.items.forEach(item => {
+                html += '<div class="item"><h3>' + item.thumb + ' ' + item.name + '</h3>';
+                if (item.desc) html += '<div class="desc">' + item.desc + '</div>';
+                if (item.purpose) html += '<div class="purpose">🎯 ' + item.purpose + '</div>';
+                if (item.premise) html += '<div class="premise">💡 ' + item.premise + '</div>';
+                if (item.data) html += '<div class="data">📊 ' + item.data + '</div>';
+                html += '</div>';
+            });
+        });
+        html += '</body></html>';
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        setTimeout(() => { win.focus(); win.print(); }, 1000);
+        sound.save();
+    }
+
+    const jsonBtn = document.getElementById('lg-json-btn');
+    if (jsonBtn) jsonBtn.addEventListener('click', exportLegendJSON);
+    const pdfBtn = document.getElementById('lg-pdf-btn');
+    if (pdfBtn) pdfBtn.addEventListener('click', exportLegendPDF);
+
+    // ═══════════════════════════════════════════════════════════════
+    // TOOLTIP
+    // ═══════════════════════════════════════════════════════════════
+    const tooltipData = {};
+    LEGEND_DATA.problems.items.forEach(item => { tooltipData[item.name] = item; });
+
+    const tooltipEl = document.getElementById('sphere-tooltip');
+    let hoverTimeout = null;
+
+    window.addEventListener('mousemove', (event) => {
+        if (isDragging) return;
+        mouse.x = (event.clientX/window.innerWidth)*2-1;
+        mouse.y = -(event.clientY/window.innerHeight)*2+1;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(problemSpheres);
+
+        if (hits.length > 0) {
+            const obj = hits[0].object;
+            if (hoveredSphere !== obj) {
+                hoveredSphere = obj;
+                sound.hover();
+            }
+            const name = obj.userData.name;
+            const obstruction = obj.userData.obstruction;
+
+            if (hoverTimeout) { clearTimeout(hoverTimeout); hoverTimeout = null; }
+
+            const ld = tooltipData[name];
+            const hue = 0.33 * (1 - (obstruction || 0));
+            const colorStr = 'hsl(' + (hue * 360) + ', 100%, 50%)';
+
+            tooltipEl.innerHTML = '<div class="st-title">' + name + '</div>' +
+                '<div class="st-obstruction">Obstruction: <span style="color:' + colorStr + ';font-weight:bold;">' + (obstruction ? obstruction.toFixed(2) : 'N/A') + '</span></div>' +
+                '<div class="st-desc">' + (ld ? ld.desc : 'Mathematical open problem in ' + (obj.userData.corridor || 'unknown') + '.') + '</div>' +
+                (ld && ld.premise ? '<div class="st-premise">' + ld.premise + '</div>' : '') +
+                (ld && ld.data ? '<div class="st-meta">' + ld.data.split('|').slice(0, 3).join(' | ') + '</div>' : '');
+
+            tooltipEl.style.display = 'block';
+            let tx = event.clientX + 16, ty = event.clientY + 16;
+            const tw = 320, th = tooltipEl.offsetHeight || 150;
+            if (tx + tw > window.innerWidth) tx = event.clientX - tw - 10;
+            if (ty + th > window.innerHeight) ty = event.clientY - th - 10;
+            tooltipEl.style.left = tx + 'px';
+            tooltipEl.style.top = ty + 'px';
+        } else {
+            hoveredSphere = null;
+            if (!hoverTimeout) {
+                hoverTimeout = setTimeout(() => { tooltipEl.style.display = 'none'; }, 50);
+            }
+        }
+    });
+
+    animate();
+    </script>
+</body>
+</html>

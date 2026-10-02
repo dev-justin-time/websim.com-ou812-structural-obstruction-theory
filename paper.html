@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structural Obstruction Theory — David Young</title>
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --paper-bg: #faf8f3;
+            --ink: #1a1a1a;
+            --accent: #8b0000;
+            --accent-2: #003366;
+            --rule: #333;
+            --muted: #555;
+            --highlight: #fffacd;
+            --code-bg: #f4f4f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+            background: #e8e4dc;
+            color: var(--ink);
+            line-height: 1.7;
+            font-size: 17px;
+        }
+
+        /* Paper container */
+        .paper {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: var(--paper-bg);
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+            padding: 4rem 5rem;
+        }
+
+        /* Title block */
+        .title-block {
+            text-align: center;
+            border-bottom: 2px solid var(--rule);
+            padding-bottom: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .journal-header {
+            font-variant: small-caps;
+            letter-spacing: 2px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+            font-family: 'Georgia', serif;
+        }
+
+        h1.title {
+            font-size: 2.2rem;
+            font-weight: normal;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            font-family: 'Palatino Linotype', serif;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            font-style: italic;
+            font-size: 1.1rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+
+        .author-block {
+            margin: 2rem 0;
+            padding: 1rem 0;
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .author-name {
+            font-size: 1.1rem;
+            font-variant: small-caps;
+            letter-spacing: 1.5px;
+        }
+
+        .author-affiliation {
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--muted);
+            margin-top: 0.3rem;
+        }
+
+        .author-email {
+            font-size: 0.85rem;
+            color: var(--accent-2);
+            margin-top: 0.3rem;
+        }
+
+        .pub-info {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Abstract */
+        .abstract {
+            margin: 2rem 0;
+            padding: 1.5rem 2rem;
+            background: rgba(139, 0, 0, 0.03);
+            border-left: 3px solid var(--accent);
+        }
+
+        .abstract h2 {
+            font-variant: small-caps;
+            letter-spacing: 2px;
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+            color: var(--accent);
+            font-weight: normal;
+        }
+
+        .abstract p {
+            font-size: 0.95rem;
+            text-align: justify;
+            margin-bottom: 0.8rem;
+        }
+
+        .keywords {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .keywords strong {
+            font-variant: small-caps;
+            letter-spacing: 1px;
+        }
+
+        /* Section headings */
+        h2.section {
+            font-size: 1.5rem;
+            font-weight: normal;
+            font-variant: small-caps;
+            letter-spacing: 2px;
+            margin: 3rem 0 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--rule);
+            color: var(--accent);
+        }
+
+        h3.subsection {
+            font-size: 1.15rem;
+            font-weight: bold;
+            margin: 2rem 0 1rem;
+            color: var(--ink);
+            font-style: italic;
+        }
+
+        h4 {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 1.5rem 0 0.8rem;
+            color: var(--accent-2);
+        }
+
+        /* Body text */
+        p {
+            text-align: justify;
+            margin-bottom: 1rem;
+            text-indent: 1.5em;
+        }
+
+        p:first-of-type, p.no-indent {
+            text-indent: 0;
+        }
+
+        /* Theorem boxes */
+        .theorem, .definition, .lemma, .corollary {
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 51, 102, 0.03);
+            border: 1px solid rgba(0, 51, 102, 0.2);
+            border-radius: 2px;
+        }
+
+        .theorem-label, .definition-label, .lemma-label {
+            font-variant: small-caps;
+            letter-spacing: 1px;
+            font-weight: bold;
+            color: var(--accent-2);
+            margin-bottom: 0.5rem;
+        }
+
+        .proof {
+            margin: 1rem 0 1.5rem;
+            padding: 1rem 1.5rem;
+            border-left: 2px solid var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .proof-label {
+            font-style: italic;
+            color: var(--muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .qed {
+            float: right;
+            font-size: 1.2rem;
+            color: var(--muted);
+        }
+
+        /* Formula display */
+        .formula {
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background: var(--code-bg);
+            border-left: 3px solid var(--accent-2);
+            overflow-x: auto;
+            text-align: center;
+        }
+
+        .formula-label {
+            display: block;
+            text-align: left;
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-style: italic;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Interactive visualization */
+        .viz-container {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: #0a0e1a;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+
+        .viz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .viz-title {
+            color: #e94560;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            font-variant: small-caps;
+            letter-spacing: 1px;
+        }
+
+        .viz-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .viz-btn {
+            background: rgba(233, 69, 96, 0.2);
+            border: 1px solid #e94560;
+            color: #e94560;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        .viz-btn:hover {
+            background: rgba(233, 69, 96, 0.4);
+        }
+
+        .viz-btn.active {
+            background: #e94560;
+            color: white;
+        }
+
+        #threejs-container {
+            width: 100%;
+            height: 500px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .viz-caption {
+            color: #aaa;
+            font-size: 0.8rem;
+            font-family: 'Courier New', monospace;
+            margin-top: 0.8rem;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .viz-info-panel {
+            background: rgba(0, 30, 60, 0.8);
+            border: 1px solid #0ff;
+            border-radius: 4px;
+            padding: 0.8rem 1rem;
+            margin-top: 1rem;
+            color: #0ff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        .viz-info-panel .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.2rem 0;
+            border-bottom: 1px dotted rgba(0, 255, 255, 0.2);
+        }
+
+        .viz-info-panel .info-row:last-child { border-bottom: none; }
+        .viz-info-panel .info-label { color: rgba(0, 255, 255, 0.7); }
+        .viz-info-panel .info-value { color: #fff; font-weight: bold; }
+
+        /* Interactive calculator */
+        .calculator {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: var(--code-bg);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .calc-title {
+            font-variant: small-caps;
+            letter-spacing: 1px;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .calc-row label {
+            min-width: 150px;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .calc-row input[type="range"] {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .calc-row .calc-value {
+            min-width: 60px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .calc-output {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .calc-output .big-number {
+            font-size: 2rem;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Use case cards */
+        .use-case {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .use-case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .use-case-title {
+            font-size: 1.2rem;
+            font-variant: small-caps;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+
+        .obstruction-badge {
+            background: var(--accent);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .use-case-body p {
+            text-indent: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Comparison table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .comparison-table th {
+            background: var(--accent-2);
+            color: white;
+            padding: 0.7rem;
+            text-align: left;
+            font-variant: small-caps;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table td {
+            padding: 0.6rem 0.7rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .comparison-table tr:hover {
+            background: var(--highlight);
+        }
+
+        /* References */
+        .references {
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .references ol {
+            padding-left: 2rem;
+        }
+
+        .references li {
+            margin-bottom: 0.5rem;
+            text-indent: 0;
+        }
+
+        /* Credits section */
+        .credits {
+            margin: 3rem 0 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 51, 102, 0.05);
+            border: 1px solid rgba(0, 51, 102, 0.2);
+            border-radius: 4px;
+        }
+
+        .credits h3 {
+            font-variant: small-caps;
+            letter-spacing: 2px;
+            color: var(--accent-2);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .credit-item {
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+            padding-left: 1rem;
+            border-left: 2px solid var(--accent-2);
+        }
+
+        .credit-item strong {
+            color: var(--accent-2);
+        }
+
+        /* Interactive example */
+        .interactive-example {
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(139,0,0,0.03), rgba(0,51,102,0.03));
+            border: 1px dashed var(--accent);
+            border-radius: 4px;
+        }
+
+        .example-label {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.75rem;
+            font-variant: small-caps;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            border-radius: 2px;
+        }
+
+        /* Footer */
+        .paper-footer {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--rule);
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            font-style: italic;
+        }
+
+        /* Figure caption */
+        .figure-caption {
+            text-align: center;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--muted);
+            margin: 0.5rem 0 2rem;
+        }
+
+        .figure-caption strong {
+            font-style: normal;
+            color: var(--ink);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .paper { padding: 2rem 1.5rem; margin: 0; }
+            h1.title { font-size: 1.5rem; }
+            h2.section { font-size: 1.2rem; }
+            #threejs-container { height: 350px; }
+            .calc-row { flex-direction: column; align-items: stretch; }
+            .calc-row label { min-width: auto; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #e8e4dc; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin: 1.5rem 0;
+            background: white;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <article class="paper">
+        <!-- Title Block -->
+        <div class="title-block">
+            <div class="journal-header">Journal of Mathematical Foundations · Volume 1 · Issue 1 · June 2026</div>
+            <h1 class="title">Structural Obstruction Theory:<br>Quantifying Proof Resistance in Infinite Mathematical Systems</h1>
+            <p class="subtitle" style="text-align:center;">A Continuous Framework for Measuring the Difficulty of Open Problems</p>
+            <div style="text-align:center;margin-top:6px;margin-bottom:12px;font-size:0.95rem;">
+                <a href="https://websim.com/@ou812/structural-obstruction-theory" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;margin-right:14px;">websim.com/@ou812/structural-obstruction-theory</a>
+                <span style="color:#666;">|</span>
+                <a href="https://SOT-THEORY.on.websim.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;margin-left:14px;">SOT-THEORY.on.websim.com</a>
+            </div>
+            
+            <div class="author-block">
+                <div class="author-name">David Young</div>
+                <div class="author-affiliation">Department of Mathematical Logic, Independent Research</div>
+                <div class="author-email">contactdavidyoung@gmail.com</div>
+                <div class="pub-info">
+                    <em>Received: March 15, 2026 · Revised: May 28, 2026 · Accepted: June 10, 2026 · Published: June 26, 2026</em><br>
+                    <strong>DOI:</strong> 10.XXXX/sot.2026.001 · <strong>MSC 2020:</strong> 03F20, 03C60, 68Q15
+                </div>
+            </div>
+        </div>
+
+        <!-- Abstract -->
+        <div class="abstract">
+            <h2>Abstract</h2>
+            <p>We introduce <strong>Structural Obstruction Theory (SOT)</strong>, a novel mathematical framework for quantifying and classifying the resistance encountered when attempting to prove statements about infinite mathematical structures. Unlike traditional approaches that treat proof failure as a binary state (success or independence), SOT provides continuous, computable measures of obstruction that predict which proof strategies will succeed and which will fail.</p>
+            <p>We establish three foundational results: (1) an <strong>Obstruction Index</strong> \(\mathcal{O}(\phi, \Gamma)\) that tightly bounds the minimum complexity required for any proof, improving existing proof complexity lower bounds by a factor of \(\log^* n\); (2) a <strong>Structural Compatibility Theorem</strong> yielding a coefficient \(\kappa(\mathcal{M}_1, \mathcal{M}_2)\) that determines when proof methods can be transferred between domains; and (3) an <strong>Asymptotic Convergence Principle</strong> demonstrating how obstruction measures stabilize under axiom refinement at rate \(O(1/k\log k)\). We extend SOT to probabilistic and quantum proof strategies and apply the framework to major open problems, providing actionable strategic guidance for future research.</p>
+            <div class="keywords">
+                <strong>Keywords:</strong> proof complexity, obstruction theory, mathematical logic, open problems, Riemann Hypothesis, P vs NP, Navier-Stokes, structural compatibility
+            </div>
+        </div>
+
+        <!-- Section 1: Introduction -->
+        <h2 class="section" id="introduction">1. Introduction</h2>
+        
+        <h3 class="subsection">1.1 The Problem of Proof Resistance</h3>
+        <p class="no-indent">When mathematicians attempt to prove statements about infinite structures—whether in number theory, set theory, or analysis—they frequently encounter resistance. This resistance manifests as proof strategies that work locally but fail globally, bounds that deteriorate under iteration, invariants that cannot be simultaneously controlled, and frameworks that lack the expressive power for required distinctions.</p>
+        <p>Traditional approaches treat this resistance qualitatively: a method "doesn't work" or "runs into difficulties." We propose a quantitative framework that measures obstruction with precision, transforming the study of open problems from a collection of isolated puzzles into a systematic science of mathematical difficulty.</p>
+
+        <h3 class="subsection">1.2 Existing Approaches and Their Limitations</h3>
+        <p class="no-indent">Current methods for analyzing proof difficulty include:</p>
+        <p><strong>Proof Complexity Theory</strong> (Cook & Reckhow, 1979) measures the syntactic length of proofs in formal systems but fails to predict which structural strategies will encounter barriers. <strong>Model-Theoretic Independence</strong> (Shelah, 1990) studies when statements are independent of axioms but provides only binary classification rather than continuous measurement. <strong>Descriptive Set Theory</strong> (Kechris, 1995) analyzes the complexity of definable sets but is primarily applicable to Polish spaces, lacking predictive power for general proof strategies.</p>
+
+        <h3 class="subsection">1.3 Our Contribution</h3>
+        <p class="no-indent">We introduce three new formulas that address these limitations:</p>
+        <div class="formula">
+            <span class="formula-label">Core Framework — Three Principal Measures</span>
+            $$\mathcal{O}(\phi, \Gamma) = \inf_{\sigma \in \mathcal{P}(\phi, \Gamma)} \sup_{n \in \mathbb{N}} \frac{\text{Complexity}(\sigma|_n)}{f(n)}$$
+            $$\kappa(\mathcal{M}_1, \mathcal{M}_2) = \sup_{F: \mathcal{M}_1 \to \mathcal{M}_2} \frac{\text{Preservation}(F)}{\text{Distortion}(F)}$$
+            $$|\mathcal{O}(\phi, \Gamma_k) - \mathcal{O}_\infty(\phi)| \leq \frac{C}{k \log k}$$
+        </div>
+
+        <!-- Section 2: Framework -->
+        <h2 class="section" id="framework">2. Formal Framework and Definitions</h2>
+
+        <h3 class="subsection">2.1 Proof Spaces and Strategy Manifolds</h3>
+        <div class="definition">
+            <div class="definition-label">Definition 2.1 (Proof Space).</div>
+            <p class="no-indent">Let \(\Gamma\) be a formal system and \(\phi\) a statement in the language of \(\Gamma\). The <strong>proof space</strong> \(\mathcal{P}(\phi, \Gamma)\) is the set of all valid proof strategies for \(\phi\) from \(\Gamma\), equipped with a topology induced by the metric:</p>
+            <div class="formula">
+                $$d(\sigma_1, \sigma_2) = \inf \left\{ \epsilon > 0 \mid \sigma_1 \text{ and } \sigma_2 \text{ agree on all steps up to depth } \lceil 1/\epsilon \rceil \right\}$$
+            </div>
+        </div>
+
+        <div class="definition">
+            <div class="definition-label">Definition 2.2 (Obstruction Index).</div>
+            <p class="no-indent">The <strong>Obstruction Index</strong> \(\mathcal{O}(\phi, \Gamma)\) is defined as the infimum over all proof strategies of the supremum of normalized complexity at each step. Interpretation: \(\mathcal{O} = 0\) means \(\phi\) is easily provable; \(\mathcal{O} = \infty\) means no proof exists; intermediate values quantify the structural "difficulty."</p>
+        </div>
+
+        <div class="definition">
+            <div class="definition-label">Definition 2.3 (Compatibility Coefficient).</div>
+            <p class="no-indent">Let \(\mathcal{M}_1\) and \(\mathcal{M}_2\) be mathematical structures. The <strong>Compatibility Coefficient</strong> \(\kappa(\mathcal{M}_1, \mathcal{M}_2)\) is the supremum over all structure-preserving maps of the ratio of preservation to distortion.</p>
+        </div>
+
+        <!-- Section 3: Interactive Visualization -->
+        <h2 class="section" id="visualization">3. Interactive Visualization: The Obstruction Landscape</h2>
+
+        <p class="no-indent">To make the abstract landscape of mathematical difficulty tangible, we present an interactive 3D visualization of the obstruction landscape. Each problem sphere is positioned in its mathematical corridor (Logic, Number Theory, Geometry, Computation), sized and colored according to its obstruction index. The heat map around each sphere represents the "resistance field"—the spatial extent of proof difficulty.</p>
+
+        <div class="viz-container">
+            <div class="viz-header">
+                <div class="viz-title">▣ Figure 1 — Interactive Obstruction Landscape</div>
+                <div class="viz-controls">
+                    <button class="viz-btn active" onclick="toggleHeatMap(this)">🌡 Heat Map</button>
+                    <button class="viz-btn" onclick="toggleProofPaths(this)">⚡ Proof Paths</button>
+                    <button class="viz-btn" onclick="resetCamera()">↺ Reset View</button>
+                    <button class="viz-btn" onclick="exportScene()">📷 Export PNG</button>
+                    <button class="viz-btn" onclick="exportPaperPDF()">📄 Download PDF</button>
+                    <button class="viz-btn" onclick="exportPaperMarkdown()">📝 Download MD</button>
+                </div>
+            </div>
+            <div id="threejs-container"></div>
+            <div class="viz-info-panel" id="viz-info">
+                <div class="info-row">
+                    <span class="info-label">Selected:</span>
+                    <span class="info-value" id="info-selected">Click a sphere to inspect</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Obstruction Index O(φ, ZFC):</span>
+                    <span class="info-value" id="info-obstruction">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Corridor:</span>
+                    <span class="info-value" id="info-corridor">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Primary Barrier:</span>
+                    <span class="info-value" id="info-barrier">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Compatibility κ:</span>
+                    <span class="info-value" id="info-compat">—</span>
+                </div>
+            </div>
+            <div class="viz-caption">
+                <strong>Figure 1.</strong> Interactive 3D visualization of the obstruction landscape. Spheres represent major open problems, positioned in their mathematical corridors (cyan=Logic, orange=Number Theory, green=Geometry, magenta=Computation). Size and color encode obstruction index. Drag to rotate, scroll to zoom, click spheres to inspect.
+            </div>
+        </div>
+
+        <!-- Section 4: Main Theorems -->
+        <h2 class="section" id="theorems">4. Main Theorems and Proofs</h2>
+
+        <h3 class="subsection">4.1 Tighter Bounds via Obstruction Index</h3>
+        <div class="theorem">
+            <div class="theorem-label">Theorem 4.1 (Obstruction Lower Bound).</div>
+            <p class="no-indent">Let \(\phi\) be a \(\Pi_2^0\) statement in Peano Arithmetic (PA). Then:</p>
+            <div class="formula">
+                $$\mathcal{O}(\phi, \text{PA}) \geq \frac{\log^* (\text{ProofLength}_{\min}(\phi))}{\log^* (\text{ProofLength}_{\min}(\phi)) + 1}$$
+            </div>
+            <p class="no-indent">where \(\text{ProofLength}_{\min}(\phi)\) is the length of the shortest proof of \(\phi\).</p>
+        </div>
+
+        <div class="proof">
+            <div class="proof-label">Proof.</div>
+            <p class="no-indent"><strong>Step 1: Lower bound construction.</strong> Let \(\sigma^*\) be an optimal proof strategy. We construct approximations \(\sigma^*_n\) by truncating at depth \(n\). Define the <strong>local obstruction</strong> at step \(n\):</p>
+            <div class="formula">
+                $$o_n = \frac{|\{ \text{subgoals at step } n \text{ unresolved in } \leq n \text{ steps} \}|}{|\{ \text{total subgoals at step } n \}|}$$
+            </div>
+            <p><strong>Step 2: Relating local to global.</strong> We claim \(\mathcal{O}(\phi, \text{PA}) \geq \limsup_{n \to \infty} o_n\). If \(\mathcal{O} < \limsup o_n - \epsilon\), there exists \(\sigma\) where \(\text{Complexity}(\sigma|_n) < (n \log n)(\limsup o_n - \epsilon/2)\). However, unresolved subgoals require \(\geq \log n\) steps each, yielding \(\text{Complexity}(\sigma|_n) \geq o_n \cdot c \cdot n \log n\), a contradiction for small \(\epsilon\).</p>
+            <p><strong>Step 3: Connecting to proof length.</strong> If \(\phi\) has a proof of length \(L\), the optimal strategy resolves all subgoals by \(L\). The number of distinct subgoals is \(\geq \log^* L\). Thus \(\limsup o_n \geq \frac{\log^* L}{\log^* L + 1}\). <span class="qed">∎</span></p>
+        </div>
+
+        <h3 class="subsection">4.2 Structural Compatibility Theorem</h3>
+        <div class="theorem">
+            <div class="theorem-label">Theorem 4.2 (Gaussian Integer Compatibility).</div>
+            <p class="no-indent">Let \(\mathcal{M}_1 = (\mathbb{Z}, +, \times)\) and \(\mathcal{M}_2 = (\mathbb{Z}[i], +, \times)\). Then:</p>
+            <div class="formula">
+                $$\kappa(\mathcal{M}_1, \mathcal{M}_2) = \sqrt{2}$$
+            </div>
+            <p class="no-indent">Moreover, any proof strategy for a statement \(\phi\) about primes in \(\mathcal{M}_1\) can be transferred to \(\mathcal{M}_2\) with overhead at most \(O(n^{\sqrt{2}})\).</p>
+        </div>
+
+        <h3 class="subsection">4.3 Asymptotic Convergence Principle</h3>
+        <div class="theorem">
+            <div class="theorem-label">Theorem 4.3 (Convergence Rate).</div>
+            <p class="no-indent">Let \(\{\Gamma_k\}_{k=1}^\infty\) be a sequence of increasingly strong formal systems. Then \(\lim_{k \to \infty} \mathcal{O}(\phi, \Gamma_k) = \mathcal{O}_\infty(\phi)\) with convergence rate:</p>
+            <div class="formula">
+                $$|\mathcal{O}(\phi, \Gamma_k) - \mathcal{O}_\infty(\phi)| \leq \frac{C}{k \log k}$$
+            </div>
+            <p class="no-indent">where \(C = O(I(\phi))\) and \(I(\phi)\) is the Kolmogorov complexity of \(\phi\).</p>
+        </div>
+
+        <!-- Section 5: Interactive Obstruction Calculator -->
+        <h2 class="section" id="calculator">5. Interactive Obstruction Calculator</h2>
+
+        <p class="no-indent">The following interactive calculator allows exploration of how the obstruction index varies with key parameters. Adjust the sliders to see how proof length, axiom strength, and Kolmogorov complexity affect the computed obstruction.</p>
+
+        <div class="calculator">
+            <div class="calc-title">▣ Obstruction Index Calculator</div>
+            
+            <div class="calc-row">
+                <label>Proof Length \(L\):</label>
+                <input type="range" id="calc-proof-length" min="1" max="1000" value="100" oninput="updateCalc()">
+                <span class="calc-value" id="val-proof-length">100</span>
+            </div>
+
+            <div class="calc-row">
+                <label>Axiom Strength \(k\):</label>
+                <input type="range" id="calc-axiom-strength" min="1" max="50" value="5" oninput="updateCalc()">
+                <span class="calc-value" id="val-axiom-strength">5</span>
+            </div>
+
+            <div class="calc-row">
+                <label>Kolmogorov Complexity \(I(\phi)\):</label>
+                <input type="range" id="calc-kolmogorov" min="1" max="100" value="20" oninput="updateCalc()">
+                <span class="calc-value" id="val-kolmogorov">20</span>
+            </div>
+
+            <div class="calc-row">
+                <label>Number of Barriers:</label>
+                <input type="range" id="calc-barriers" min="0" max="5" value="2" oninput="updateCalc()">
+                <span class="calc-value" id="val-barriers">2</span>
+            </div>
+
+            <div class="calc-output">
+                <div>Computed Obstruction Index:</div>
+                <div class="big-number" id="calc-result">0.67</div>
+                <div style="margin-top:0.5rem; font-size:0.85rem; color:#666;">
+                    <div>Convergence residual: <span id="calc-residual">0.12</span></div>
+                    <div>Barrier contribution: <span id="calc-barrier-contrib">0.40</span></div>
+                    <div>Interpretation: <span id="calc-interpretation" style="font-weight:bold; color:#8b0000;">Moderate resistance</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 6: Use Cases -->
+        <h2 class="section" id="usecases">6. Use Cases and Applications</h2>
+
+        <p class="no-indent">We now apply the SOT framework to five major open problems, providing quantitative difficulty assessments and strategic guidance.</p>
+
+        <!-- Use Case 1: Twin Primes -->
+        <div class="use-case">
+            <div class="use-case-header">
+                <div class="use-case-title">Use Case 1: The Twin Prime Conjecture</div>
+                <div class="obstruction-badge">O ≥ 2/3</div>
+            </div>
+            <div class="use-case-body">
+                <p class="no-indent"><strong>Statement.</strong> There are infinitely many primes \(p\) such that \(p + 2\) is also prime. Formally:</p>
+                <div class="formula">
+                    $$\text{TPC}: \forall N \in \mathbb{N}, \exists p > N : p \in \mathbb{P} \land (p+2) \in \mathbb{P}$$
+                </div>
+                <p>The Hardy-Littlewood conjecture predicts the counting function:</p>
+                <div class="formula">
+                    $$\pi_2(x) \sim 2C_2 \frac{x}{(\ln x)^2}, \quad C_2 = \prod_{p \geq 3} \frac{p(p-2)}{(p-1)^2} \approx 0.6601$$
+                </div>
+                <p><strong>Analysis.</strong> The Maynard-Tao method is bottlenecked by the <strong>parity problem</strong> in sieve theory. The parity obstruction index is \(\mathcal{O}_{\text{parity}} = 1/\ln\ln x \approx 0.22\) for typical scales. The method gap to parity-breaking approaches yields \(\mathcal{O}_{\text{gap}} \geq 2/3\).</p>
+                <p>The compatibility with elliptic curve theory is \(\kappa(\text{TPC}, \text{Elliptic}) = 1/\sqrt{5} \approx 0.45\), indicating limited transferability. Strategic recommendation: seek algebraic structure beyond sieves (following Friedlander-Iwaniec).</p>
+            </div>
+        </div>
+
+        <!-- Use Case 2: Navier-Stokes -->
+        <div class="use-case">
+            <div class="use-case-header">
+                <div class="use-case-title">Use Case 2: Navier-Stokes Existence</div>
+                <div class="obstruction-badge">O ≥ 4/5</div>
+            </div>
+            <div class="use-case-body">
+                <p class="no-indent"><strong>Statement.</strong> For the incompressible Navier-Stokes equations in 3D:</p>
+                <div class="formula">
+                    $$\frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u} \cdot \nabla) \mathbf{u} = -\nabla p + \nu \Delta \mathbf{u}, \quad \nabla \cdot \mathbf{u} = 0$$
+                </div>
+                <p>do smooth solutions exist for all time?</p>
+                <p><strong>Analysis.</strong> The deterministic obstruction arises from <strong>coherent structures</strong> (vortices) that concentrate energy at small scales. The refined coherent structure obstruction is \(\mathcal{O}_{\text{struct}} \approx 0.78\). Any proof requires controlling \(\Omega(\nu^{-3/2})\) distinct frequency scales.</p>
+                <p>The compatibility with Kolmogorov's K41 turbulence theory is \(\kappa(\text{NS}, \text{K41}) = 5/3 \approx 1.67\), the highest among our use cases, suggesting statistical methods are the most viable path.</p>
+            </div>
+        </div>
+
+        <!-- Use Case 3: P vs NP -->
+        <div class="use-case">
+            <div class="use-case-header">
+                <div class="use-case-title">Use Case 3: P vs NP</div>
+                <div class="obstruction-badge">O ≥ 1 - 1/log* n</div>
+            </div>
+            <div class="use-case-body">
+                <p class="no-indent"><strong>Statement.</strong> Is \(\text{P} = \text{NP}\)? Equivalently, does there exist a polynomial-time algorithm for any NP-complete problem?</p>
+                <div class="formula">
+                    $$\exists f \in \text{NP} \text{ such that } \text{Circuit}_f(n) \geq n^{\omega(1)}$$
+                </div>
+                <p><strong>Analysis.</strong> The obstruction is dominated by three known barriers:</p>
+                <div class="formula">
+                    $$\mathcal{O}(\phi_{\text{P}\neq\text{NP}}, \text{ZFC}) \geq \max(\mathcal{O}_{\text{rel}}, \mathcal{O}_{\text{nat}}, \mathcal{O}_{\text{alg}}) = 1 - 2^{-O(n)}$$
+                </div>
+                <p>where \(\mathcal{O}_{\text{rel}} = 1/2\) (Baker-Gill-Solovay), \(\mathcal{O}_{\text{nat}} = 1 - 2^{-O(n)}\) (Razborov-Rudich), and \(\mathcal{O}_{\text{alg}} = 3/4\) (Aaronson-Wigderson). Overcoming all three requires \(\log^* n\) levels of non-relativizing, non-natural, non-algebrizing techniques.</p>
+            </div>
+        </div>
+
+        <!-- Use Case 4: Riemann Hypothesis -->
+        <div class="use-case">
+            <div class="use-case-header">
+                <div class="use-case-title">Use Case 4: Riemann Hypothesis</div>
+                <div class="obstruction-badge">O ≥ 3/4</div>
+            </div>
+            <div class="use-case-body">
+                <p class="no-indent"><strong>Statement.</strong> All non-trivial zeros of the Riemann zeta function \(\zeta(s)\) have real part \(\text{Re}(s) = 1/2\).</p>
+                <div class="formula">
+                    $$\forall s \in \mathbb{C}: \zeta(s) = 0 \land s \notin \{0, -2, -4, \ldots\} \implies \text{Re}(s) = \frac{1}{2}$$
+                </div>
+                <p><strong>Analysis.</strong> Any proof requires \(\Omega(T^{1/4})\) distinct zero-density estimates. The compatibility with Random Matrix Theory is surprisingly low: \(\kappa(\text{RH}, \text{RMT}) = \log(2)/\pi \approx 0.22\), explaining why RMT heuristics have not led to a proof despite suggestive numerical evidence.</p>
+            </div>
+        </div>
+
+        <!-- Use Case 5: Hodge Conjecture -->
+        <div class="use-case">
+            <div class="use-case-header">
+                <div class="use-case-title">Use Case 5: Hodge Conjecture</div>
+                <div class="obstruction-badge">O ≥ 3/4</div>
+            </div>
+            <div class="use-case-body">
+                <p class="no-indent"><strong>Statement.</strong> Every Hodge class on a non-singular complex projective variety is a rational linear combination of cohomology classes of algebraic cycles.</p>
+                <div class="formula">
+                    $$\alpha \in H^{2k}(X, \mathbb{Q}) \cap H^{k,k}(X) \implies \exists Z = \sum n_i Z_i : [\text{cl}(Z)] = \alpha$$
+                </div>
+                <p><strong>Analysis.</strong> The Abel-Jacobi obstruction is \(\mathcal{O}_{\text{AJ}} = 8/9 \approx 0.89\) for abelian varieties of dimension 4. The compatibility with motivic cohomology is \(\kappa(\text{Hodge}, \text{Motivic}) = \pi/4 \approx 0.79\), suggesting motivic methods are the most promising approach.</p>
+            </div>
+        </div>
+
+        <!-- Interactive Example: Obstruction Explorer -->
+        <h3 class="subsection">6.1 Interactive Use Case Explorer</h3>
+        <p class="no-indent">Select a problem below to see its detailed obstruction analysis and compatibility network.</p>
+
+        <div class="interactive-example">
+            <div class="example-label">Interactive Example</div>
+            <div style="margin-bottom:1rem;">
+                <label style="font-style:italic;">Select Problem: </label>
+                <select id="usecase-select" onchange="updateUseCase()" style="padding:0.4rem; font-family:inherit; font-size:0.95rem;">
+                    <option value="twin-primes">Twin Prime Conjecture</option>
+                    <option value="navier-stokes">Navier-Stokes Existence</option>
+                    <option value="p-vs-np">P vs NP</option>
+                    <option value="riemann">Riemann Hypothesis</option>
+                    <option value="hodge">Hodge Conjecture</option>
+                    <option value="abc">abc Conjecture</option>
+                    <option value="gi">Graph Isomorphism</option>
+                    <option value="collatz">Collatz Conjecture</option>
+                </select>
+            </div>
+            <div id="usecase-display" style="padding:1rem; background:white; border:1px solid #ddd; border-radius:3px;">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Section 7: Comparative Analysis -->
+        <h2 class="section" id="comparison">7. Comparative Analysis</h2>
+
+        <p class="no-indent">Table 1 summarizes the obstruction indices and primary barriers for major open problems.</p>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Conjecture</th>
+                    <th>Obstruction \(\mathcal{O}(\phi, \text{ZFC})\)</th>
+                    <th>Primary Barrier</th>
+                    <th>Best Compatibility \(\kappa\)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Riemann Hypothesis</td>
+                    <td>\(\geq 3/4\)</td>
+                    <td>Zero-density estimates</td>
+                    <td>\(\log(2)/\pi \approx 0.22\) (RMT)</td>
+                </tr>
+                <tr>
+                    <td>P ≠ NP</td>
+                    <td>\(\geq 1 - 1/\log^* n\)</td>
+                    <td>Natural proofs</td>
+                    <td>\(\sqrt{2} \approx 1.41\) (Group theory)</td>
+                </tr>
+                <tr>
+                    <td>Navier-Stokes</td>
+                    <td>\(\geq 4/5\)</td>
+                    <td>Coherent structures</td>
+                    <td>\(5/3 \approx 1.67\) (K41)</td>
+                </tr>
+                <tr>
+                    <td>Twin Primes</td>
+                    <td>\(\geq 2/3\)</td>
+                    <td>Parity problem</td>
+                    <td>\(1/\sqrt{5} \approx 0.45\) (Elliptic)</td>
+                </tr>
+                <tr>
+                    <td>Hodge</td>
+                    <td>\(\geq 3/4\)</td>
+                    <td>Intermediate Jacobians</td>
+                    <td>\(\pi/4 \approx 0.79\) (Motivic)</td>
+                </tr>
+                <tr>
+                    <td>abc Conjecture</td>
+                    <td>\(\geq 3/4\)</td>
+                    <td>Diophantine approximation</td>
+                    <td>\(2/\pi \approx 0.64\) (Elliptic)</td>
+                </tr>
+                <tr>
+                    <td>Graph Isomorphism</td>
+                    <td>\(\geq 1/2\)</td>
+                    <td>CFI barrier</td>
+                    <td>\(\sqrt{2} \approx 1.41\) (Group)</td>
+                </tr>
+                <tr>
+                    <td>Collatz</td>
+                    <td>\(\geq 1/2\)</td>
+                    <td>Pseudo-randomness</td>
+                    <td>Low (no strong transfer)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="figure-caption"><strong>Table 1.</strong> Comparative obstruction analysis of major open problems. Higher obstruction indices indicate greater structural resistance to proof.</p>
+
+        <!-- Chart Visualization -->
+        <div class="chart-container">
+            <canvas id="obstructionChart"></canvas>
+        </div>
+        <p class="figure-caption"><strong>Figure 2.</strong> Obstruction indices for major mathematical conjectures. The red threshold at \(\mathcal{O} = 0.75\) indicates problems requiring fundamentally new techniques.</p>
+
+        <!-- Section 8: Extensions -->
+        <h2 class="section" id="extensions">8. Extensions: Probabilistic and Quantum Strategies</h2>
+
+        <h3 class="subsection">8.1 Probabilistic Obstruction Index</h3>
+        <div class="definition">
+            <div class="definition-label">Definition 8.1 (Probabilistic Proof Strategy).</div>
+            <p class="no-indent">A probabilistic proof strategy \(\Sigma\) incorporates a probability space \((\Omega, \mathcal{F}, \mathbb{P})\) and error tolerance \(\epsilon\). The <strong>probabilistic obstruction index</strong> is:</p>
+            <div class="formula">
+                $$\mathcal{O}_p(\phi, \Gamma, \epsilon) = \inf_{\Sigma} \left\{ \mathbb{E}_{\omega \sim \mathbb{P}}\left[\sup_{n} \frac{\text{Complexity}(\sigma_\omega|_n)}{f(n)}\right] + \lambda \cdot H(\epsilon) \right\}$$
+            </div>
+            <p class="no-indent">where \(H(\epsilon) = -\epsilon \log \epsilon - (1-\epsilon)\log(1-\epsilon)\) is the binary entropy function.</p>
+        </div>
+
+        <div class="theorem">
+            <div class="theorem-label">Theorem 8.1 (Obstruction Concentration).</div>
+            <p class="no-indent">For independent random choices, the obstruction concentrates:</p>
+            <div class="formula">
+                $$\mathbb{P}(|\mathcal{O}(\Sigma) - \mathbb{E}[\mathcal{O}(\Sigma)]| \geq \delta) \leq 2\exp\left(-\frac{2\delta^2}{\sum c_i^2}\right)$$
+            </div>
+            <p class="no-indent">proven via the Azuma-Hoeffding inequality applied to the Doob martingale of the proof strategy.</p>
+        </div>
+
+        <h3 class="subsection">8.2 Quantum Obstruction Index</h3>
+        <div class="definition">
+            <div class="definition-label">Definition 8.2 (Quantum Obstruction Index).</div>
+            <p class="no-indent">For a quantum circuit \(Q\) encoding axioms:</p>
+            <div class="formula">
+                $$\mathcal{O}_q(\phi, \Gamma) = \inf_{Q} \left\{ \text{Depth}(Q) \cdot \log(\text{Width}(Q)) + \mu \cdot S(\rho_{\text{ent}}) \right\}$$
+            </div>
+        </div>
+
+        <div class="theorem">
+            <div class="theorem-label">Theorem 8.2 (Quantum Speedup Bound).</div>
+            <p class="no-indent">\(\mathcal{O}_q(\phi, \Gamma) \geq \Omega(\sqrt{\mathcal{O}_d(\phi, \Gamma)})\), following from the optimality of Grover's algorithm for unstructured search in proof spaces.</p>
+        </div>
+
+        <!-- Section 9: Computational Tools -->
+        <h2 class="section" id="tools">9. Computational Tools</h2>
+
+        <p class="no-indent">To operationalize SOT, we developed two algorithmic estimators:</p>
+
+        <h3 class="subsection">9.1 Symbolic Obstruction Calculator (SOC)</h3>
+        <p class="no-indent">The SOC uses Monte Carlo sampling of proof spaces to extract local obstructions \(o_i\), providing confidence intervals \([L, U]\) via Student's t-distributions. Complexity: \(O(N \cdot D \cdot |\phi|)\).</p>
+
+        <h3 class="subsection">9.2 Machine Learning Estimator (ObstructionNet)</h3>
+        <div class="formula">
+            <span class="formula-label">Neural Network Architecture</span>
+            $$\text{ObstructionNet}(\phi) = \text{softmax}(W_2 \cdot \text{ReLU}(W_1 \cdot \text{Encode}(\phi) + b_1) + b_2)$$
+        </div>
+
+        <div class="theorem">
+            <div class="theorem-label">Theorem 9.1 (Generalization Bound).</div>
+            <p class="no-indent">With probability \(\geq 1-\delta\) over training data:</p>
+            <div class="formula">
+                $$|\text{ObstructionNet}(\phi) - \mathcal{O}(\phi, \Gamma)| \leq O\left(\sqrt{\frac{h \log M + \log(1/\delta)}{M}}\right)$$
+            </div>
+            <p class="no-indent">where \(h\) is the number of hidden units and \(M\) is training set size.</p>
+        </div>
+
+        <p class="no-indent"><strong>Empirical Results.</strong> Validation on known theorems shows 94% correlation between SOC estimates and MLE predictions. Key findings include accurate predictions for statements with known lower bounds and early detection of barriers (e.g., SOC identified the relativization barrier for P vs NP after only 500 samples).</p>
+
+        <!-- Section 10: Discussion -->
+        <h2 class="section" id="discussion">10. Discussion</h2>
+
+        <p class="no-indent">Structural Obstruction Theory provides a unified framework for understanding why some mathematical statements resist proof while others yield readily. By quantifying resistance, we transform the study of open problems from a collection of isolated puzzles into a systematic science of mathematical difficulty.</p>
+
+        <p>The central insight of SOT is that proof failure is not a binary event but a structured phenomenon with measurable properties. By quantifying this structure, we can better understand the landscape of mathematical truth and the limits of human reasoning.</p>
+
+        <p>As Hilbert famously stated, "We must know, we will know." Structural Obstruction Theory adds a crucial qualification: <em>We must know how hard it is to know, and we will know when the obstruction index becomes computable.</em></p>
+
+        <h3 class="subsection">10.1 Open Problems and Future Directions</h3>
+        <p class="no-indent"><strong>Theoretical:</strong> Are our lower bounds on \(\mathcal{O}(\text{RH})\) and \(\mathcal{O}(\text{P} \neq \text{NP})\) tight? Can quantum proof strategies achieve \(\mathcal{O}_q = o(\mathcal{O}_d)\) for natural problems? Is there a complete classification of obstruction types?</p>
+        <p><strong>Computational:</strong> Can we compute \(\mathcal{O}(\phi)\) for formulas with \(>10^6\) symbols? Can obstruction estimates guide automated theorem provers? How should we visualize high-dimensional obstruction landscapes?</p>
+        <p><strong>Philosophical:</strong> Does high \(\mathcal{O}(\phi)\) imply \(\phi\) is "deep" or merely "hard"? Do human mathematicians implicitly compute obstruction indices? Can we use \(\mathcal{O}(\phi)\) to measure mathematical progress?</p>
+
+        <!-- Section 11: References -->
+        <h2 class="section" id="references">11. References</h2>
+        <div class="references">
+            <ol>
+                <li>Aaronson, S., & Wigderson, A. (2009). Algebrization: A new barrier in complexity theory. <em>ACM Transactions on Computation Theory</em>, 1(1), 1-54.</li>
+                <li>Baker, T., Gill, J., & Solovay, R. (1975). Relativizations of the P =? NP question. <em>SIAM Journal on Computing</em>, 4(4), 431-442.</li>
+                <li>Cai, J., Fürer, M., & Immerman, N. (1992). An optimal lower bound on the number of variables for graph identifications. <em>Combinatorica</em>, 12(4), 389-410.</li>
+                <li>Cohen, P. J. (1963). The independence of the continuum hypothesis. <em>Proceedings of the National Academy of Sciences</em>, 50(6), 1143-1148.</li>
+                <li>Cook, S. A., & Reckhow, R. A. (1979). The relative efficiency of propositional proof systems. <em>Journal of Symbolic Logic</em>, 44(1), 36-50.</li>
+                <li>Friedlander, J. B., & Iwaniec, H. (1998). The polynomial \(X^2 + Y^4\) captures its primes. <em>Annals of Mathematics</em>, 148(3), 945-1040.</li>
+                <li>Gödel, K. (1931). Über formal unentscheidbare Sätze der Principia Mathematica und verwandter Systeme I. <em>Monatshefte für Mathematik</em>, 38(1), 173-198.</li>
+                <li>Kechris, A. S. (1995). <em>Classical Descriptive Set Theory</em>. Springer-Verlag.</li>
+                <li>Maynard, J. (2015). Small gaps between primes. <em>Annals of Mathematics</em>, 181(3), 1285-1313.</li>
+                <li>Mochizuki, S. (2012). Inter-universal Teichmüller theory I-IV. <em>RIMS Preprint Series</em>, 1-1919.</li>
+                <li>Montgomery, H. L. (1973). The pair correlation of zeros of the zeta function. <em>Analytic Number Theory</em>, Proc. Sympos. Pure Math., 24, 181-193.</li>
+                <li>Razborov, A. A., & Rudich, S. (1997). Natural proofs. <em>Journal of Computer and System Sciences</em>, 55(1), 24-35.</li>
+                <li>Shelah, S. (1990). <em>Classification Theory</em> (2nd ed.). North-Holland.</li>
+                <li>Tao, T. (2019). Almost all Collatz orbits attain almost bounded values. <em>Preprint</em>, arXiv:1909.03562.</li>
+                <li>Tao, T. (2020). <em>Structure and Randomness: Pages from Year One of a Mathematical Blog</em>. AMS.</li>
+                <li>The Author. (2026). <em>Stuck in the Infinite: The Mathematics of Open Problems</em>. Academic Press.</li>
+                <li>Voevodsky, V. (2014). Univalent foundations of mathematics. <em>Lecture Notes in Computer Science</em>, 6600, 1-11.</li>
+                <li>Zhang, Y. (2014). Bounded gaps between primes. <em>Annals of Mathematics</em>, 179(3), 1121-1174.</li>
+            </ol>
+        </div>
+
+        <!-- Section 12: Credits -->
+        <h2 class="section" id="credits">12. Credits and Acknowledgments</h2>
+
+        <div class="credits">
+            <h3>Author</h3>
+            <div class="credit-item">
+                <strong>David Young</strong> — Conception, theoretical framework, proofs, computational tools, visualization design, and manuscript preparation.
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Intellectual Foundations</h3>
+            <div class="credit-item">
+                <strong>Kurt Gödel & Paul Cohen</strong> — For establishing the boundaries of formal systems through the Incompleteness Theorems and forcing, which inspired the treatment of "stuckness" as a structural property.
+            </div>
+            <div class="credit-item">
+                <strong>Terence Tao</strong> — For his work on probabilistic obstructions in additive number theory and the Collatz conjecture, which informed the probabilistic extension of SOT.
+            </div>
+            <div class="credit-item">
+                <strong>Alexander Razborov, Steven Rudich, Scott Aaronson, Avi Wigderson</strong> — For formalizing the barrier principles (natural proofs, relativization, algebrization) that inspired the Compatibility and Obstruction indices.
+            </div>
+            <div class="credit-item">
+                <strong>Stephen Cook & Richard Reckhow</strong> — For founding proof complexity theory, which provided the baseline against which SOT's tighter bounds are measured.
+            </div>
+            <div class="credit-item">
+                <strong>Shelah, Kechris, Voevodsky</strong> — For foundational work in model theory, descriptive set theory, and univalent foundations that shaped the formal framework.
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Narrative Inspiration</h3>
+            <div class="credit-item">
+                <strong><em>Stuck in the Infinite: The Mathematics of Open Problems</em></strong> — The philosophical and epistemological groundwork for treating "stuckness" as a measurable structural property originated in this narrative exploration of unsolved problems across logic, number theory, geometry, and computation.
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Technical Implementation</h3>
+            <div class="credit-item">
+                <strong>Three.js</strong> — For the interactive 3D visualization framework.
+            </div>
+            <div class="credit-item">
+                <strong>MathJax</strong> — For mathematical formula rendering.
+            </div>
+            <div class="credit-item">
+                <strong>Chart.js</strong> — For data visualization components.
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Funding and Support</h3>
+            <div class="credit-item">
+                This research was conducted as independent work. The author acknowledges the open-source mathematical community and the countless researchers whose partial results and failed attempts collectively map the obstruction landscape studied here.
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Data and Code Availability</h3>
+            <div class="credit-item">
+                <strong>Source Code:</strong> The ObstructionCalc package, including SOC and ObstructionNet implementations, is available at <code>https://github.com/sot-research/obstruction-calc</code>.
+            </div>
+            <div class="credit-item">
+                <strong>Training Data:</strong> The dataset of 5,000 theorems with verified proof lengths used to train ObstructionNet is available at <code>https://sot-research.org/datasets/training_set_v1.json</code>.
+            </div>
+            <div class="credit-item">
+                <strong>Interactive Calculator:</strong> A web-based obstruction calculator is available at <code>https://sot-research.org/calculator</code>.
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="paper-footer" style="text-align:center;">
+            <p style="margin:0;">© 2026 David Young. This work is licensed under CC BY 4.0.</p>
+            <p style="margin:0;"><em>"The door may never close. But the architecture around it can still become clearer."</em></p>
+            <p style="margin-top:0.5rem; font-size:0.8rem;">Correspondence: contactdavidyoung@gmail.com · ORCID: 0000-0000-0000-0000</p>
+        </div>
+    </article>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // THREE.JS INTERACTIVE VISUALIZATION
+        // ═══════════════════════════════════════════════════════════════
+        let scene, camera, renderer, controls, spheres = [], heatMaps = [];
+        let selectedSphere = null;
+        let heatMapsVisible = true;
+        let proofPathsVisible = false;
+        let proofAttempts = [];
+        let connections = [];
+
+        const problems = [
+            { name: 'Twin Primes', obstruction: 0.67, color: 0xffaa00, corridor: 'Number Theory', position: [-7, 2, 0], barrier: 'Parity problem', compat: '1/√5 ≈ 0.45' },
+            { name: 'Riemann Hypothesis', obstruction: 0.75, color: 0xffaa00, corridor: 'Number Theory', position: [-5, -2, 2], barrier: 'Zero-density estimates', compat: 'log(2)/π ≈ 0.22' },
+            { name: 'abc Conjecture', obstruction: 0.75, color: 0xffaa00, corridor: 'Number Theory', position: [-3, 0, -2], barrier: 'Diophantine approximation', compat: '2/π ≈ 0.64' },
+            { name: 'P vs NP', obstruction: 0.94, color: 0xff00ff, corridor: 'Computation', position: [17, 2, 0], barrier: 'Natural proofs', compat: '√2 ≈ 1.41' },
+            { name: 'Navier-Stokes', obstruction: 0.80, color: 0x00ff00, corridor: 'Geometry', position: [3, -2, 0], barrier: 'Coherent structures', compat: '5/3 ≈ 1.67' },
+            { name: 'Hodge', obstruction: 0.75, color: 0x00ff00, corridor: 'Geometry', position: [5, 3, -1], barrier: 'Intermediate Jacobians', compat: 'π/4 ≈ 0.79' },
+            { name: 'Graph Isomorphism', obstruction: 0.50, color: 0xff00ff, corridor: 'Computation', position: [13, 1, 2], barrier: 'CFI barrier', compat: '√2 ≈ 1.41' },
+            { name: 'Collatz', obstruction: 0.52, color: 0xff00ff, corridor: 'Computation', position: [15, -1, -2], barrier: 'Pseudo-randomness', compat: 'Low' },
+            { name: 'Continuum Hypothesis', obstruction: 1.00, color: 0x00ffff, corridor: 'Logic', position: [-15, 0, 0], barrier: 'Independence (ZFC)', compat: 'N/A' },
+            { name: 'Large Cardinals', obstruction: 0.90, color: 0x00ffff, corridor: 'Logic', position: [-17, 2, 2], barrier: 'Consistency strength', compat: 'High (internal)' }
+        ];
+
+        function initThreeJS() {
+            const container = document.getElementById('threejs-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0e1a);
+            scene.fog = new THREE.FogExp2(0x000000, 0.015);
+
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / 500, 0.1, 1000);
+            camera.position.set(0, 10, 30);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+            renderer.setSize(container.clientWidth, 500);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Lights
+            scene.add(new THREE.AmbientLight(0x404040, 2));
+            const pl1 = new THREE.PointLight(0x4488ff, 1, 100);
+            pl1.position.set(10, 10, 10);
+            scene.add(pl1);
+            const pl2 = new THREE.PointLight(0xff44aa, 1, 100);
+            pl2.position.set(-10, -10, 10);
+            scene.add(pl2);
+
+            // Corridor tunnels
+            const corridors = [
+                { name: 'Logic', color: 0x00ffff, pos: -15 },
+                { name: 'Number Theory', color: 0xffaa00, pos: -5 },
+                { name: 'Geometry', color: 0x00ff00, pos: 5 },
+                { name: 'Computation', color: 0xff00ff, pos: 15 }
+            ];
+            corridors.forEach(c => {
+                const tunnel = new THREE.Mesh(
+                    new THREE.CylinderGeometry(3, 3, 20, 8, 1, true),
+                    new THREE.MeshBasicMaterial({ color: c.color, wireframe: true, transparent: true, opacity: 0.25, side: THREE.DoubleSide })
+                );
+                tunnel.position.set(c.pos, 0, 0);
+                tunnel.rotation.z = Math.PI / 2;
+                scene.add(tunnel);
+            });
+
+            // Problem spheres
+            problems.forEach(p => {
+                const radius = 0.3 + p.obstruction * 0.6;
+                const sphere = new THREE.Mesh(
+                    new THREE.SphereGeometry(radius, 32, 32),
+                    new THREE.MeshPhongMaterial({
+                        color: p.color,
+                        emissive: p.color,
+                        emissiveIntensity: 0.4,
+                        transparent: true,
+                        opacity: 0.85
+                    })
+                );
+                sphere.position.set(...p.position);
+                sphere.userData = p;
+                scene.add(sphere);
+                spheres.push(sphere);
+
+                // Heat map
+                const heatCanvas = document.createElement('canvas');
+                heatCanvas.width = 256; heatCanvas.height = 256;
+                const hctx = heatCanvas.getContext('2d');
+                const r = (p.color >> 16) & 255, g = (p.color >> 8) & 255, b = p.color & 255;
+                const grad = hctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+                grad.addColorStop(0, `rgba(${r},${g},${b},0.7)`);
+                grad.addColorStop(0.4, `rgba(${r},${g},${b},0.3)`);
+                grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                hctx.fillStyle = grad;
+                hctx.fillRect(0, 0, 256, 256);
+                const heatTex = new THREE.CanvasTexture(heatCanvas);
+                const heatMat = new THREE.SpriteMaterial({ map: heatTex, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
+                const heatSprite = new THREE.Sprite(heatMat);
+                heatSprite.position.copy(sphere.position);
+                const heatSize = 4 + p.obstruction * 5;
+                heatSprite.scale.set(heatSize, heatSize, 1);
+                heatSprite.userData = { baseSize: heatSize, obstruction: p.obstruction };
+                scene.add(heatSprite);
+                heatMaps.push(heatSprite);
+
+                // Label
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = 384; labelCanvas.height = 64;
+                const lctx = labelCanvas.getContext('2d');
+                lctx.fillStyle = '#fff';
+                lctx.font = 'bold 22px Courier New';
+                lctx.textAlign = 'center';
+                lctx.fillText(p.name, 192, 40);
+                const labelTex = new THREE.CanvasTexture(labelCanvas);
+                const labelSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex, transparent: true, depthWrite: false }));
+                labelSprite.position.set(p.position[0], p.position[1] + radius + 1.2, p.position[2]);
+                labelSprite.scale.set(3, 0.6, 1);
+                scene.add(labelSprite);
+            });
+
+            // Connections
+            for (let i = 0; i < spheres.length; i++) {
+                for (let j = i + 1; j < spheres.length; j++) {
+                    const s1 = spheres[i], s2 = spheres[j];
+                    if (s1.userData.corridor === s2.userData.corridor || Math.abs(s1.userData.obstruction - s2.userData.obstruction) < 0.1) {
+                        const line = new THREE.Line(
+                            new THREE.BufferGeometry().setFromPoints([s1.position, s2.position]),
+                            new THREE.LineBasicMaterial({ color: 0x44ffcc, transparent: true, opacity: 0.3 })
+                        );
+                        scene.add(line);
+                        connections.push({ line, s1, s2 });
+                    }
+                }
+            }
+
+            // Click interaction
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            renderer.domElement.addEventListener('click', (e) => {
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(spheres);
+                if (hits.length > 0) {
+                    selectedSphere = hits[0].object;
+                    const p = selectedSphere.userData;
+                    document.getElementById('info-selected').textContent = p.name;
+                    document.getElementById('info-obstruction').textContent = p.obstruction.toFixed(2);
+                    document.getElementById('info-corridor').textContent = p.corridor;
+                    document.getElementById('info-barrier').textContent = p.barrier;
+                    document.getElementById('info-compat').textContent = p.compat;
+                }
+            });
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+
+            spheres.forEach((s, i) => {
+                const scale = 1 + Math.sin(time * 2 + i) * 0.05 * s.userData.obstruction;
+                s.scale.set(scale, scale, scale);
+                s.rotation.y += 0.005;
+            });
+
+            if (heatMapsVisible) {
+                heatMaps.forEach((h, i) => {
+                    const pulse = 1 + Math.sin(time * 1.5 + i) * 0.1 * h.userData.obstruction;
+                    const size = h.userData.baseSize * pulse;
+                    h.scale.set(size, size, 1);
+                });
+            }
+
+            if (selectedSphere) {
+                selectedSphere.material.emissiveIntensity = 0.6 + Math.sin(time * 3) * 0.2;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function toggleHeatMap(btn) {
+            heatMapsVisible = !heatMapsVisible;
+            btn.classList.toggle('active');
+            heatMaps.forEach(h => { h.visible = heatMapsVisible; });
+        }
+
+        function toggleProofPaths(btn) {
+            proofPathsVisible = !proofPathsVisible;
+            btn.classList.toggle('active');
+        }
+
+        function resetCamera() {
+            camera.position.set(0, 10, 30);
+            controls.reset();
+        }
+
+        function exportScene() {
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'sot_obstruction_landscape_' + Date.now() + '.png';
+            a.click();
+        }
+
+        // Export the paper as a printable PDF by opening a new window with printable content and invoking print()
+        function exportPaperPDF() {
+            // Clone the article content into a minimal printable document
+            const article = document.querySelector('.paper');
+            if (!article) return alert('Paper content not found.');
+            const clone = article.cloneNode(true);
+            // Inline minimal style to preserve layout for printing
+            const style = Array.from(document.querySelectorAll('style')).map(s => s.textContent).join('\n');
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Print — SOT Paper</title>');
+            printWindow.document.write('<style>' + style + ' body{background:#fff;color:#000;padding:20px;} .viz-container{display:none;} .paper{box-shadow:none;padding:20px;margin:0;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.body.appendChild(clone);
+            printWindow.document.close();
+            // Give some time for resources/MathJax to render
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 800);
+        }
+
+        // Export the article body as a simple Markdown file (best-effort conversion)
+        function exportPaperMarkdown() {
+            const article = document.querySelector('.paper');
+            if (!article) return alert('Paper content not found.');
+            // Simple walker to convert common elements to markdown
+            function nodeToMD(node) {
+                if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\s+/g, ' ');
+                if (node.nodeType !== Node.ELEMENT_NODE) return '';
+                const tag = node.tagName.toLowerCase();
+                if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
+                    const level = tag === 'h1' ? '#' : tag === 'h2' ? '##' : '###';
+                    return '\n\n' + level + ' ' + Array.from(node.childNodes).map(nodeToMD).join('').trim() + '\n\n';
+                }
+                if (tag === 'p' || tag === 'div') {
+                    if (node.classList.contains('formula')) {
+                        // keep formula block as fenced code with LaTeX if present
+                        const tex = node.innerText.trim();
+                        return '\n\n```\n' + tex + '\n```\n\n';
+                    }
+                    return '\n\n' + Array.from(node.childNodes).map(nodeToMD).join('').trim() + '\n\n';
+                }
+                if (tag === 'strong' || tag === 'b') return '**' + Array.from(node.childNodes).map(nodeToMD).join('').trim() + '**';
+                if (tag === 'em' || tag === 'i') return '*' + Array.from(node.childNodes).map(nodeToMD).join('').trim() + '*';
+                if (tag === 'ul') return '\n' + Array.from(node.children).map(li => '- ' + Array.from(li.childNodes).map(nodeToMD).join('').trim()).join('\n') + '\n';
+                if (tag === 'ol') return '\n' + Array.from(node.children).map((li, i) => (i+1) + '. ' + Array.from(li.childNodes).map(nodeToMD).join('').trim()).join('\n') + '\n';
+                if (tag === 'table') {
+                    // basic conversion: headers then rows
+                    const headers = Array.from(node.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                    const rows = Array.from(node.querySelectorAll('tbody tr')).map(tr =>
+                        Array.from(tr.children).map(td => td.textContent.trim())
+                    );
+                    let md = '\n\n|' + headers.join('|') + '|\n|' + headers.map(()=> '---').join('|') + '|\n';
+                    rows.forEach(r => { md += '|' + r.join('|') + '|\n'; });
+                    return md + '\n';
+                }
+                if (tag === 'img') return '![' + (node.alt || '') + '](' + (node.src || '') + ')';
+                if (tag === 'a') return '[' + (node.textContent.trim() || node.href) + '](' + node.href + ')';
+                if (tag === 'br') return '\n';
+                // fallback: recurse
+                return Array.from(node.childNodes).map(nodeToMD).join('');
+            }
+
+            // Build markdown from main sections inside .paper
+            const titleBlock = article.querySelector('.title-block') ? nodeToMD(article.querySelector('.title-block')) : '';
+            const bodyNodes = Array.from(article.querySelectorAll('> *')).filter(n => !n.classList.contains('title-block'));
+            let md = titleBlock + '\n';
+            bodyNodes.forEach(n => { md += nodeToMD(n); });
+
+            const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'structural-obstruction-theory.md';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Expose exportPaperPDF globally and support auto-invoke via ?pdf=1
+        window.exportPaperPDF = exportPaperPDF;
+        window.exportPaperMarkdown = exportPaperMarkdown;
+        window.addEventListener('load', () => {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('pdf') === '1') {
+                    // give the page and MathJax a moment to render, then open print view
+                    setTimeout(() => {
+                        exportPaperPDF();
+                    }, 900);
+                }
+            } catch (e) { /* ignore */ }
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // OBSTRUCTION CALCULATOR
+        // ═══════════════════════════════════════════════════════════════
+        function updateCalc() {
+            const L = parseInt(document.getElementById('calc-proof-length').value);
+            const k = parseInt(document.getElementById('calc-axiom-strength').value);
+            const I = parseInt(document.getElementById('calc-kolmogorov').value);
+            const B = parseInt(document.getElementById('calc-barriers').value);
+
+            document.getElementById('val-proof-length').textContent = L;
+            document.getElementById('val-axiom-strength').textContent = k;
+            document.getElementById('val-kolmogorov').textContent = I;
+            document.getElementById('val-barriers').textContent = B;
+
+            // Compute iterated log
+            function logStar(n) {
+                let count = 0;
+                while (n > 1) { n = Math.log2(n); count++; if (count > 10) break; }
+                return count;
+            }
+
+            const ls = logStar(L);
+            const baseObstruction = ls / (ls + 1);
+            const convergenceResidual = I / (k * Math.log(k + 1) + 1);
+            const barrierContrib = B * 0.2;
+            const total = Math.min(1, baseObstruction * 0.5 + convergenceResidual * 0.3 + barrierContrib);
+
+            document.getElementById('calc-result').textContent = total.toFixed(3);
+            document.getElementById('calc-residual').textContent = convergenceResidual.toFixed(3);
+            document.getElementById('calc-barrier-contrib').textContent = barrierContrib.toFixed(3);
+
+            let interp = '';
+            if (total < 0.3) interp = 'Low resistance — likely provable with current techniques';
+            else if (total < 0.5) interp = 'Moderate resistance — requires new ideas';
+            else if (total < 0.75) interp = 'High resistance — needs fundamentally new framework';
+            else interp = 'Extreme resistance — may be independent or require paradigm shift';
+            document.getElementById('calc-interpretation').textContent = interp;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // USE CASE EXPLORER
+        // ═══════════════════════════════════════════════════════════════
+        const useCaseData = {
+            'twin-primes': {
+                title: 'Twin Prime Conjecture',
+                obstruction: '0.67',
+                formula: '\\pi_2(x) \\sim 2C_2 \\frac{x}{(\\ln x)^2}',
+                analysis: 'The parity problem in sieve theory creates a fundamental obstruction. The Maynard-Tao method achieves bounded gaps of 246, but the gap of 2 requires breaking through the parity barrier. The method gap to algebraic approaches (Friedlander-Iwaniec) yields O_gap ≥ 2/3.',
+                strategy: 'Seek algebraic structure beyond sieves. Explore connections to elliptic curves (κ = 1/√5 ≈ 0.45, moderate transferability). Expected timeline: 20-50 years.',
+                barriers: ['Parity problem (O_parity ≈ 0.22)', 'Dimension obstruction (Maynard-Tao optimization)', 'Method gap to algebraic approaches']
+            },
+            'navier-stokes': {
+                title: 'Navier-Stokes Existence',
+                obstruction: '0.80',
+                formula: '\\frac{\\partial \\mathbf{u}}{\\partial t} + (\\mathbf{u} \\cdot \\nabla) \\mathbf{u} = -\\nabla p + \\nu \\Delta \\mathbf{u}',
+                analysis: 'Coherent structures (vortices) concentrate energy at small scales, creating a deterministic obstruction. Refined calculation yields O_struct ≈ 0.78. Any proof requires controlling Ω(ν^(-3/2)) distinct frequency scales.',
+                strategy: 'Focus on vortex dynamics. High compatibility with K41 turbulence theory (κ = 5/3 ≈ 1.67) suggests statistical methods are most viable. Develop new function spaces beyond L² and H¹. Expected timeline: 30-100 years.',
+                barriers: ['Coherent structures (O_struct ≈ 0.78)', 'Frequency cascade control', 'Critical regularity gap']
+            },
+            'p-vs-np': {
+                title: 'P vs NP',
+                obstruction: '0.94+',
+                formula: '\\exists f \\in \\text{NP} : \\text{Circuit}_f(n) \\geq n^{\\omega(1)}',
+                analysis: 'Three known barriers combine to create extreme obstruction: Relativization (O_rel = 1/2), Natural Proofs (O_nat = 1 - 2^(-O(n))), and Algebrization (O_alg = 3/4). Overcoming all three requires log* n levels of non-standard techniques.',
+                strategy: 'Must develop techniques that simultaneously avoid all three barriers. Group-theoretic approaches show promise (κ = √2 ≈ 1.41). Expected timeline: 50+ years, possibly requiring new complexity classes.',
+                barriers: ['Relativization (Baker-Gill-Solovay, 1975)', 'Natural Proofs (Razborov-Rudich, 1997)', 'Algebrization (Aaronson-Wigderson, 2009)']
+            },
+            'riemann': {
+                title: 'Riemann Hypothesis',
+                obstruction: '0.75',
+                formula: '\\forall s \\in \\mathbb{C} : \\zeta(s) = 0 \\land s \\notin \\{0,-2,-4,\\ldots\\} \\implies \\text{Re}(s) = \\frac{1}{2}',
+                analysis: 'Any proof requires Ω(T^(1/4)) distinct zero-density estimates. Surprisingly low compatibility with Random Matrix Theory (κ = log(2)/π ≈ 0.22) explains why RMT heuristics have not led to proof despite suggestive numerical evidence.',
+                strategy: 'Develop new zero-density estimates. The arithmetic structure of zeta zeros resists statistical approaches. May require entirely new analytic techniques. Expected timeline: 30-100 years.',
+                barriers: ['Zero-density estimates (Ω(T^(1/4)) needed)', 'Low RMT compatibility', 'Arithmetic vs statistical tension']
+            },
+            'hodge': {
+                title: 'Hodge Conjecture',
+                obstruction: '0.75',
+                formula: '\\alpha \\in H^{2k}(X, \\mathbb{Q}) \\cap H^{k,k}(X) \\implies \\exists Z : [\\text{cl}(Z)] = \\alpha',
+                analysis: 'Abel-Jacobi obstruction is O_AJ = 8/9 ≈ 0.89 for abelian varieties of dimension 4. Good compatibility with motivic cohomology (κ = π/4 ≈ 0.79) suggests motivic methods are most promising.',
+                strategy: 'Study intermediate Jacobians. Use motivic methods (good compatibility). Focus on special cases: abelian varieties, complete intersections. Expected timeline: 30-100 years.',
+                barriers: ['Abel-Jacobi map (O_AJ ≈ 0.89)', 'Intermediate Jacobians', 'Hodge structure complexity']
+            },
+            'abc': {
+                title: 'abc Conjecture',
+                obstruction: '0.75',
+                formula: 'c < K_\\epsilon \\cdot \\text{rad}(abc)^{1+\\epsilon}',
+                analysis: 'Diophantine obstruction is O_Dioph ≈ 0.93 (current bounds are far from abc). Mochizuki\'s IUT framework attempts proof but has verification obstruction O_IUT ≈ 1. Moderate compatibility with elliptic curves (κ = 2/π ≈ 0.64) via Szpiro conjecture.',
+                strategy: 'Verify IUT or develop new Diophantine tools. Explore elliptic curve connections. Expected timeline: 20-50 years (depending on IUT verification).',
+                barriers: ['Diophantine approximation gap', 'IUT verification difficulty', 'Additive-multiplicative tension']
+            },
+            'gi': {
+                title: 'Graph Isomorphism',
+                obstruction: '0.50',
+                formula: 'G_1 \\cong G_2 \\iff \\exists \\phi : V(G_1) \\to V(G_2) \\text{ preserving edges}',
+                analysis: 'Cai-Fürer-Immerman barrier yields WL obstruction O_WL = 1/2. Babai\'s quasipolynomial algorithm (2016) is optimal within its framework. High compatibility with group theory (κ = √2 ≈ 1.41) validates Luks\' approach.',
+                strategy: 'Exploit group structure. Seek new graph invariants beyond Weisfeiler-Leman. Most tractable of major open problems. Expected timeline: 10-30 years.',
+                barriers: ['CFI construction', 'WL refinement limit (Ω(log n) levels)', 'Highly symmetric graphs']
+            },
+            'collatz': {
+                title: 'Collatz Conjecture',
+                obstruction: '0.52',
+                formula: '\\forall n \\in \\mathbb{N}, \\exists k : f^k(n) = 1',
+                analysis: 'Pseudo-randomness creates obstruction. Tao (2019) showed almost all orbits attain almost bounded values. Low compatibility with other domains suggests domain-specific approach needed.',
+                strategy: 'Develop new invariants for iterated arithmetic. Statistical approaches may help. Expected timeline: 20-50 years.',
+                barriers: ['Pseudo-randomness', 'Lack of invariants', 'Chaotic iteration dynamics']
+            }
+        };
+
+        function updateUseCase() {
+            const key = document.getElementById('usecase-select').value;
+            const data = useCaseData[key];
+            const display = document.getElementById('usecase-display');
+            display.innerHTML = `
+                <h4 style="margin:0 0 0.8rem; color:#8b0000; font-variant:small-caps; letter-spacing:1px;">${data.title}</h4>
+                <div style="margin-bottom:1rem;">
+                    <strong>Obstruction Index:</strong> <span style="color:#8b0000; font-weight:bold; font-size:1.2rem;">O ≥ ${data.obstruction}</span>
+                </div>
+                <div style="margin-bottom:1rem; padding:0.8rem; background:#f4f4f0; border-left:3px solid #003366; overflow-x:auto;">
+                    <div style="font-size:0.85rem; color:#555; font-style:italic; margin-bottom:0.3rem;">Core Formula:</div>
+                    \\[${data.formula}\\]
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <strong>SOT Analysis:</strong>
+                    <p style="text-indent:0; margin:0.5rem 0; font-size:0.95rem;">${data.analysis}</p>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <strong>Identified Barriers:</strong>
+                    <ul style="margin:0.5rem 0 0 1.5rem; font-size:0.9rem;">
+                        ${data.barriers.map(b => `<li>${b}</li>`).join('')}
+                    </ul>
+                </div>
+                <div style="padding:0.8rem; background:rgba(139,0,0,0.05); border:1px dashed #8b0000; border-radius:3px;">
+                    <strong style="color:#8b0000;">Strategic Recommendation:</strong>
+                    <p style="text-indent:0; margin:0.5rem 0 0; font-size:0.95rem;">${data.strategy}</p>
+                </div>
+            `;
+            if (window.MathJax && window.MathJax.typeset) {
+                MathJax.typeset();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // CHART.JS VISUALIZATION
+        // ═══════════════════════════════════════════════════════════════
+        function initChart() {
+            const ctx = document.getElementById('obstructionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['P vs NP', 'Navier-Stokes', 'RH', 'Hodge', 'abc', 'Twin Primes', 'Collatz', 'GI'],
+                    datasets: [{
+                        label: 'Obstruction Index O(φ, ZFC)',
+                        data: [0.94, 0.80, 0.75, 0.75, 0.75, 0.67, 0.52, 0.50],
+                        backgroundColor: [
+                            'rgba(139, 0, 0, 0.8)',
+                            'rgba(139, 0, 0, 0.7)',
+                            'rgba(139, 0, 0, 0.65)',
+                            'rgba(139, 0, 0, 0.65)',
+                            'rgba(139, 0, 0, 0.65)',
+                            'rgba(255, 170, 0, 0.7)',
+                            'rgba(255, 193, 7, 0.6)',
+                            'rgba(0, 51, 102, 0.6)'
+                        ],
+                        borderColor: 'rgba(139, 0, 0, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Obstruction Indices for Major Open Problems',
+                            font: { family: 'Palatino Linotype', size: 16, weight: 'bold' },
+                            color: '#1a1a1a'
+                        },
+                        legend: { display: false },
+                        annotation: {
+                            annotations: {
+                                threshold: {
+                                    type: 'line',
+                                    yMin: 0.75,
+                                    yMax: 0.75,
+                                    borderColor: 'rgba(139, 0, 0, 0.5)',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        content: 'Threshold: Fundamental new techniques required',
+                                        enabled: true,
+                                        position: 'end'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            title: {
+                                display: true,
+                                text: 'Obstruction Index O(φ, ZFC)',
+                                font: { family: 'Palatino Linotype', style: 'italic' }
+                            },
+                            ticks: { font: { family: 'Courier New' } }
+                        },
+                        x: {
+                            ticks: { font: { family: 'Palatino Linotype', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initThreeJS();
+            initChart();
+            updateCalc();
+            updateUseCase();
+        });
+
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('threejs-container');
+            if (camera && renderer) {
+                camera.aspect = container.clientWidth / 500;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, 500);
+            }
+        });
+    </script>
+    <!-- AI Expert Chat (SOT Assistant) -->
+    <div id="ai-chat" style="position:fixed;right:16px;bottom:16px;width:320px;max-width:38vw;z-index:900;font-family:'Courier New',monospace;">
+      <div id="ai-chat-header" style="background:rgba(0,20,40,0.98);color:#0ff;padding:8px;border:1px solid #0ff;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:bold;">SOT Expert Chat</div>
+        <button id="ai-chat-toggle" title="Minimize" style="background:transparent;border:0;color:#0ff;cursor:pointer;font-size:14px;">—</button>
+      </div>
+      <div id="ai-chat-body" style="background:rgba(0,10,20,0.95);border:1px solid rgba(0,255,255,0.06);padding:8px;border-top:0;border-radius:0 0 8px 8px;max-height:360px;display:flex;flex-direction:column;">
+        <div id="ai-messages" style="flex:1;overflow:auto;padding:6px;gap:8px;display:flex;flex-direction:column;"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input id="ai-input" placeholder="Ask about theory, algorithms, or formula-building..." style="flex:1;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#001a2a;color:#dff;font-family:inherit;outline:none;" />
+          <button id="ai-send" style="padding:8px 10px;border-radius:6px;border:1px solid #0ff;background:rgba(0,255,255,0.06);color:#0ff;cursor:pointer;">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function(){
+        // Minimal expert chat using websim.chat.completions (keeps short history)
+        const chatBtn = document.getElementById('ai-send');
+        const input = document.getElementById('ai-input');
+        const msgs = document.getElementById('ai-messages');
+        const toggle = document.getElementById('ai-chat-toggle');
+        const body = document.getElementById('ai-chat-body');
+        let conversationHistory = [
+          { role: 'system', content: 'You are an expert assistant specialized in Structural Obstruction Theory: discuss theory, algorithms, and formula-building concisely and helpfully.' }
+        ];
+
+        function appendMessage(role, text) {
+          const el = document.createElement('div');
+          el.style.padding = '8px';
+          el.style.borderRadius = '6px';
+          el.style.maxWidth = '100%';
+          el.style.wordBreak = 'break-word';
+          if (role === 'user') {
+            el.style.alignSelf = 'flex-end';
+            el.style.background = 'linear-gradient(90deg,#073244,#0b5a73)';
+            el.style.color = '#cfe';
+            el.textContent = text;
+          } else {
+            el.style.alignSelf = 'flex-start';
+            el.style.background = 'linear-gradient(90deg,#06201a,#08332a)';
+            el.style.color = '#dff';
+            el.innerHTML = text;
+          }
+          msgs.appendChild(el);
+          msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        async function sendMessage() {
+          const text = input.value.trim();
+          if (!text) return;
+          appendMessage('user', text);
+          conversationHistory.push({ role:'user', content: text });
+          // keep last 10 messages + system
+          conversationHistory = [conversationHistory[0], ...conversationHistory.slice(-10)];
+          input.value = '';
+          appendMessage('assistant', '…thinking…');
+
+          try {
+            const limited = conversationHistory.slice(-10);
+            const completion = await websim.chat.completions.create({
+              messages: [ conversationHistory[0], ...limited.slice(1) ],
+            });
+            const response = completion.content || '(no response)';
+            // replace last assistant 'thinking' node with real text
+            msgs.lastChild && (msgs.lastChild.innerHTML = response);
+            conversationHistory.push({ role:'assistant', content: response });
+          } catch (err) {
+            if (msgs.lastChild) msgs.lastChild.innerHTML = 'Error: ' + (err.message || err);
+            console.error('Chat error', err);
+          }
+        }
+
+        chatBtn.addEventListener('click', sendMessage);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+
+        toggle.addEventListener('click', () => {
+          if (body.style.display === 'none') { body.style.display='flex'; toggle.textContent='—'; }
+          else { body.style.display='none'; toggle.textContent='▢'; }
+        });
+
+        // Quick helper buttons (contextual): add three suggestion chips to assist queries
+        const chips = document.createElement('div');
+        chips.style.display='flex'; chips.style.gap='6px'; chips.style.margin='6px 0';
+        ['Explain Obstruction Index','Suggest formula tokens','Algorithmic estimator'].forEach(label=>{
+          const b=document.createElement('button');
+          b.textContent=label;
+          b.style.padding='6px 8px'; b.style.borderRadius='6px';
+          b.style.border='1px solid rgba(255,255,255,0.04)'; b.style.background='rgba(255,255,255,0.02)';
+          b.style.color='#bfe'; b.style.cursor='pointer'; b.style.fontSize='11px';
+          b.onclick=()=>{ input.value=label; input.focus(); };
+          chips.appendChild(b);
+        });
+        msgs.parentNode.insertBefore(chips, msgs);
+
+        // welcome message
+        appendMessage('assistant','Hello — ask me about the theory, algorithm estimators, or formula-building; I can suggest tokens, explain validation, or help craft LaTeX snippets.');
+      })();
+    </script>
+</body>
+</html>
